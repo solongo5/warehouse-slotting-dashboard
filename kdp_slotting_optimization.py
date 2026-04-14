@@ -134,7 +134,7 @@ st.write(
     "SKU misalignment and relocation opportunities."
 )
 
-st.markdown("###")
+st.markdown("<br>", unsafe_allow_html=True)
 
 # ---------- KPI cards ----------
 col1, col2, col3, col4 = st.columns(4)
@@ -151,6 +151,8 @@ with col3:
 with col4:
     st.metric("High-Priority Segment %", f"{priority_segment_pct}%")
 
+st.markdown("<br>", unsafe_allow_html=True)
+
 # ---------- Impact framing ----------
 st.markdown(
     """
@@ -162,6 +164,19 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+
+# ---------- Top finding ----------
+st.markdown(
+    """
+    <div class="impact-box">
+        <b>Top Finding:</b> High-movement A-class SKUs are not consistently placed in Prime zones,
+        indicating missed opportunities to optimize pick efficiency.
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
+st.markdown("<br>", unsafe_allow_html=True)
 
 # ---------- Insights ----------
 st.subheader("Key Optimization Insights")
@@ -193,6 +208,7 @@ st.markdown(
 )
 
 st.markdown("---")
+st.markdown("<br>", unsafe_allow_html=True)
 
 # ---------- Relocation actions ----------
 st.subheader("Recommended Relocation Actions")
@@ -204,6 +220,7 @@ relocation_candidates = df[df["Needs_Relocation"]].sort_values(
 st.dataframe(relocation_candidates, use_container_width=True)
 
 st.markdown("---")
+st.markdown("<br>", unsafe_allow_html=True)
 
 # ---------- Critical items ----------
 st.subheader("A-Class High-Movement SKUs (Critical Items)")
@@ -216,6 +233,7 @@ else:
     st.dataframe(priority_display, use_container_width=True)
 
 st.markdown("---")
+st.markdown("<br>", unsafe_allow_html=True)
 
 # ---------- Charts ----------
 chart_col1, chart_col2 = st.columns(2)
@@ -226,14 +244,22 @@ with chart_col1:
     zone_counts.columns = ["Zone", "Count"]
 
     zone_chart = alt.Chart(zone_counts).mark_bar(
-        cornerRadiusTopLeft=5,
-        cornerRadiusTopRight=5
+        cornerRadiusTopLeft=6,
+        cornerRadiusTopRight=6
     ).encode(
-        x=alt.X("Zone:N", sort="-y", title="Zone"),
-        y=alt.Y("Count:Q", title="Count"),
-        color=alt.value("#f59e0b")
+        x=alt.X("Zone:N", sort="-y", title=""),
+        y=alt.Y("Count:Q", title=""),
+        color=alt.Color(
+            "Zone:N",
+            scale=alt.Scale(
+                domain=["Prime", "Secondary", "Reserve"],
+                range=["#2563eb", "#16a34a", "#f59e0b"]
+            ),
+            legend=None
+        ),
+        tooltip=["Zone", "Count"]
     ).properties(
-        height=320
+        height=300
     )
 
     st.altair_chart(zone_chart, use_container_width=True, theme=None)
@@ -244,17 +270,27 @@ with chart_col2:
     abc_counts.columns = ["ABC_Class", "Count"]
 
     abc_chart = alt.Chart(abc_counts).mark_bar(
-        cornerRadiusTopLeft=5,
-        cornerRadiusTopRight=5
+        cornerRadiusTopLeft=6,
+        cornerRadiusTopRight=6
     ).encode(
-        x=alt.X("ABC_Class:N", sort="-y", title="ABC Class"),
-        y=alt.Y("Count:Q", title="Count"),
-        color=alt.value("#16a34a")
+        x=alt.X("ABC_Class:N", title=""),
+        y=alt.Y("Count:Q", title=""),
+        color=alt.Color(
+            "ABC_Class:N",
+            scale=alt.Scale(
+                domain=["A", "B", "C"],
+                range=["#dc2626", "#2563eb", "#16a34a"]
+            ),
+            legend=None
+        ),
+        tooltip=["ABC_Class", "Count"]
     ).properties(
-        height=320
+        height=300
     )
 
     st.altair_chart(abc_chart, use_container_width=True, theme=None)
+
+st.markdown("<br>", unsafe_allow_html=True)
 
 # ---------- Interpretation ----------
 st.markdown(
