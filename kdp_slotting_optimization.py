@@ -10,7 +10,7 @@ st.set_page_config(
 st.markdown("""
 <style>
     .main {
-        background-color: #f8f9fa;
+        background-color: #f3f4f6;
     }
 
     .block-container {
@@ -19,12 +19,12 @@ st.markdown("""
     }
 
     h1 {
-        color: #1f2937;
+        color: #111827;
         font-weight: 700;
     }
 
     h2, h3 {
-        color: #374151;
+        color: #111827;
         font-weight: 600;
     }
 
