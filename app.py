@@ -68,6 +68,13 @@ div[data-testid="stMetric"] {
 # ---------- Load data ----------
 df_original = pd.read_csv("data.csv")
 
+st.write("Rows:", len(df_original))
+st.write(
+    "Misaligned:",
+    int((df_original["Current_Location"] != df_original["Optimal_Location"]).sum())
+)
+st.write(df_original[["Current_Location", "Optimal_Location"]].head(10))
+
 # ---------- Filters ----------
 st.subheader("Filters")
 col1, col2 = st.columns(2)
