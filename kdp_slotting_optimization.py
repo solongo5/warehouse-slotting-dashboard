@@ -112,8 +112,11 @@ st.caption(f"Current filter: ABC Class = {selected_class} | Minimum Movements = 
 
 # ---------- KPI calculations ----------
 df["Needs_Relocation"] = df["Current_Location"] != df["Optimal_Location"]
-df["Estimated_Pick_Minutes_Saved"] = df["Needs_Relocation"].astype(int) * 0.5
-df["Estimated_Labor_Cost_Impact"] = df["Estimated_Pick_Minutes_Saved"] * (25 / 60)
+
+# Illustrative impact assumptions
+# Assumes misaligned SKU relocations reduce handling/pick effort by ~3 minutes per week per SKU
+df["Illustrative_Time_Saved_Min"] = df["Needs_Relocation"].apply(lambda x: 3 if x else 0)
+df["Illustrative_Labor_Impact"] = df["Illustrative_Time_Saved_Min"] * (25 / 60)
 
 total_skus = len(df)
 misaligned = int(df["Needs_Relocation"].sum())
@@ -125,8 +128,8 @@ priority_df = df_original[
 
 priority_segment_pct = round((len(priority_df) / len(df_original)) * 100, 1) if len(df_original) > 0 else 0.0
 
-estimated_time_saved = round(df["Estimated_Pick_Minutes_Saved"].sum() / 60, 1)
-estimated_labor_cost_impact = round(df["Estimated_Labor_Cost_Impact"].sum(), 0)
+estimated_time_saved = round(df["Illustrative_Time_Saved_Min"].sum() / 60, 1)
+estimated_labor_cost_impact = round(df["Illustrative_Labor_Impact"].sum(), 0)
 
 # ---------- Insight logic ----------
 prime_misplaced = df[
@@ -185,8 +188,8 @@ with col6:
     st.metric("Est. Labor Impact (Illustrative)", f"${estimated_labor_cost_impact:,.0f}")
 
 st.caption(
-    "Illustrative estimate based on assumed 0.5 min reduction per pick and $25/hour labor rate. "
-    "Actual impact would require operational validation."
+    "Illustrative estimate based on assumed 3 min reduction per pick-related effort for misaligned SKUs and "
+    "$25/hour labor rate. Actual impact would require operational validation."
 )
 
 st.markdown("<br>", unsafe_allow_html=True)
@@ -210,6 +213,11 @@ st.markdown(
     </div>
     """,
     unsafe_allow_html=True
+)
+
+st.markdown(
+    "**Business Impact:** Identified misaligned high-demand SKUs and prioritized relocations "
+    "to improve picking efficiency and optimize warehouse space utilization."
 )
 
 st.markdown("<br>", unsafe_allow_html=True)
@@ -248,17 +256,20 @@ st.markdown("<br>", unsafe_allow_html=True)
 # ---------- Top priority moves ----------
 st.subheader("Top 10 Priority Moves (Highest Impact)")
 
-if top_moves.empty:
+top_moves_display = top_moves.rename(columns={
+    "Needs_Relocation": "Needs Relocation",
+    "Illustrative_Time_Saved_Min": "Est. Time Saved (min)",
+    "Illustrative_Labor_Impact": "Est. Labor Impact ($)"
+})
+
+if top_moves_display.empty:
     st.info("No high-priority A-class relocation moves found under the current filter.")
 else:
-    st.dataframe(top_moves, use_container_width=True, height=350)
-
-st.markdown("---")
-st.markdown("<br>", unsafe_allow_html=True)
-
-# ---------- All relocation candidates ----------
-st.subheader("All Relocation Candidates (Ranked by Impact)")
-st.dataframe(relocation_candidates, use_container_width=True, height=420)
+    display_cols = [
+        "SKU_ID", "ABC_Class", "Zone", "Current_Location", "Movements",
+        "Stock_Qty", "Optimal_Location", "Needs Relocation"
+    ]
+    st.dataframe(top_moves_display[display_cols], use_container_width=True, height=350)
 
 st.markdown("---")
 st.markdown("<br>", unsafe_allow_html=True)
@@ -266,13 +277,16 @@ st.markdown("<br>", unsafe_allow_html=True)
 # ---------- Critical items ----------
 st.subheader("A-Class High-Movement SKUs (Critical Items)")
 
-priority_display = priority_df.sort_values(by="Movements", ascending=False)
+priority_display = priority_df.sort_values(by="Movements", ascending=False).rename(columns={
+    "Needs_Relocation": "Needs Relocation"
+})
 
-if priority_display.empty:
-    st.info("No A-class high-movement SKUs found under current data conditions.")
-else:
-    st.dataframe(priority_display, use_container_width=True, height=420)
+priority_cols = [
+    "SKU_ID", "ABC_Class", "Zone", "Current_Location",
+    "Movements", "Stock_Qty", "Optimal_Location"
+]
 
+st.dataframe(priority_display[priority_cols], use_container_width=True, height=420)
 st.caption("These SKUs represent the highest operational impact and should be prioritized for optimal zone placement.")
 
 st.markdown("---")
