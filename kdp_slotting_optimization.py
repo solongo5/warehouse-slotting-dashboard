@@ -149,7 +149,13 @@ st.write(
     "and improve warehouse picking efficiency and zone utilization."
 )
 
+st.caption(
+    "Analyzed SKU-level movement and inventory data to identify misalignment, prioritize high-impact relocations, "
+    "and simulate operational efficiency gains."
+)
+
 st.markdown("<br>", unsafe_allow_html=True)
+
 
 # ---------- KPI cards ----------
 col1, col2, col3, col4, col5 = st.columns(5)
@@ -228,7 +234,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 
 # ---------- Top priority moves ----------
 st.subheader("Top 10 Priority Moves (Highest Impact)")
-st.dataframe(top_moves, use_container_width=True)
+st.dataframe(top_moves, use_container_width=True, height=350)
 
 st.markdown("---")
 st.markdown("<br>", unsafe_allow_html=True)
