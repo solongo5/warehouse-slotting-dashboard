@@ -1,0 +1,7 @@
+SKU_ID,ABC_Class,Zone,Current_Location,Optimal_Location,Movements,Stock_Qty
+SKU_1,A,Prime,101,201,180,320
+SKU_2,B,Secondary,145,145,75,120
+SKU_3,C,Reserve,200,310,20,60
+SKU_4,A,Prime,110,210,160,400
+SKU_5,B,Secondary,175,175,90,200
+SKU_6,C,Reserve,220,330,15,50
