@@ -30,6 +30,26 @@ col1.metric("Total SKUs", total_skus)
 col2.metric("Misaligned SKUs", misaligned)
 col3.metric("Misalignment %", f"{misalignment_pct}%")
 
+# Actionable insights
+prime_misplaced = df[
+    (df["ABC_Class"] == "A") &
+    (df["Zone"] != "Prime") &
+    (df["Needs_Relocation"] == True)
+]
+
+low_in_prime = df[
+    (df["ABC_Class"] == "C") &
+    (df["Zone"] == "Prime")
+]
+
+st.subheader("📊 Key Optimization Insights")
+
+st.write(
+    f"- {len(prime_misplaced)} high-priority (A-class) SKUs are outside Prime zones → relocation opportunity\n"
+    f"- {len(low_in_prime)} low-priority (C-class) SKUs occupy Prime space → inefficient utilization\n"
+    f"- Total relocation candidates: {misaligned} SKUs ({misalignment_pct}%)"
+)
+
 # Business summary
 st.success(f"{misaligned} SKUs ({misalignment_pct}%) require relocation based on slotting mismatch.")
 
