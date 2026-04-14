@@ -71,6 +71,16 @@ st.markdown("""
         color: #14532d;
     }
 
+    .impact-box {
+        background-color: #fff7ed;
+        padding: 16px;
+        border-radius: 10px;
+        border-left: 5px solid #f59e0b;
+        margin-top: 10px;
+        margin-bottom: 10px;
+        color: #7c2d12;
+    }
+
     .small-note {
         color: #6b7280;
         font-size: 0.95rem;
@@ -79,16 +89,16 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ---------- Load simulated data ----------
-df = pd.read_csv("data.csv")
+df_original = pd.read_csv("data.csv")
 
 # ---------- Filter ----------
 st.subheader("Filters")
 selected_class = st.selectbox("ABC Class", ["All", "A", "B", "C"])
 
 if selected_class != "All":
-    df = df[df["ABC_Class"] == selected_class].copy()
+    df = df_original[df_original["ABC_Class"] == selected_class].copy()
 else:
-    df = df.copy()
+    df = df_original.copy()
 
 st.caption(f"Current filter: {selected_class}")
 
@@ -99,8 +109,11 @@ total_skus = len(df)
 misaligned = int(df["Needs_Relocation"].sum())
 misalignment_pct = round((misaligned / total_skus) * 100, 1) if total_skus > 0 else 0.0
 
-priority_df = df[(df["ABC_Class"] == "A") & (df["Movements"] > 100)].copy()
-priority_segment_pct = round((len(priority_df) / total_skus) * 100, 1) if total_skus > 0 else 0.0
+priority_df = df_original[
+    (df_original["ABC_Class"] == "A") & (df_original["Movements"] > 100)
+].copy()
+
+priority_segment_pct = round((len(priority_df) / len(df_original)) * 100, 1) if len(df_original) > 0 else 0.0
 
 # ---------- Insight logic ----------
 prime_misplaced = df[
@@ -138,6 +151,18 @@ with col3:
 with col4:
     st.metric("High-Priority Segment %", f"{priority_segment_pct}%")
 
+# ---------- Impact framing ----------
+st.markdown(
+    """
+    <div class="impact-box">
+        <b>Impact:</b> Identified relocation opportunities across the analyzed SKU set,
+        prioritizing high-movement A-class items to improve picking efficiency and
+        optimize Prime zone utilization.
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
 # ---------- Insights ----------
 st.subheader("Key Optimization Insights")
 
@@ -156,10 +181,21 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+st.markdown(
+    """
+    <div class="insight-box">
+        <b>Recommended Action:</b> Move high-movement A-class SKUs into Prime zones and
+        reassign lower-priority inventory to secondary storage to improve pick speed
+        and reduce congestion.
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
 st.markdown("---")
 
-# ---------- Relocation candidates ----------
-st.subheader("Relocation Candidates")
+# ---------- Relocation actions ----------
+st.subheader("Recommended Relocation Actions")
 
 relocation_candidates = df[df["Needs_Relocation"]].sort_values(
     by="Movements", ascending=False
@@ -169,13 +205,15 @@ st.dataframe(relocation_candidates, use_container_width=True)
 
 st.markdown("---")
 
-# ---------- High-priority segment ----------
-st.subheader("High-Priority SKU Segment")
+# ---------- Critical items ----------
+st.subheader("A-Class High-Movement SKUs (Critical Items)")
 
-st.dataframe(
-    priority_df.sort_values(by="Movements", ascending=False),
-    use_container_width=True
-)
+priority_display = priority_df.sort_values(by="Movements", ascending=False)
+
+if priority_display.empty:
+    st.info("No A-class high-movement SKUs found under current data conditions.")
+else:
+    st.dataframe(priority_display, use_container_width=True)
 
 st.markdown("---")
 
