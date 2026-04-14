@@ -7,98 +7,75 @@ st.set_page_config(
     layout="wide"
 )
 
-# ---------- Custom styling ----------
+# ---------- Styling ----------
 st.markdown("""
 <style>
-    [data-testid="stAppViewContainer"] {
-        background-color: #f3f4f6;
-    }
+[data-testid="stAppViewContainer"] {
+    background-color: #f3f4f6;
+}
 
-    [data-testid="stHeader"] {
-        background: rgba(0, 0, 0, 0);
-    }
+.main .block-container {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+}
 
-    .main .block-container {
-        padding-top: 2rem;
-        padding-bottom: 2rem;
-    }
+h1, h2, h3 {
+    color: #111827;
+}
 
-    h1 {
-        color: #111827;
-        font-weight: 700;
-    }
+div[data-testid="stMetric"] {
+    background-color: white;
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
 
-    h2, h3 {
-        color: #111827;
-        font-weight: 600;
-    }
+.insight-box {
+    background-color: #e0f2fe;
+    padding: 16px;
+    border-radius: 10px;
+    border-left: 5px solid #0284c7;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
 
-    div[data-testid="stMetric"] {
-        background-color: white;
-        padding: 16px;
-        border-radius: 12px;
-        border: 1px solid #e5e7eb;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-    }
+.summary-box {
+    background-color: #e8f5e9;
+    padding: 16px;
+    border-radius: 10px;
+    border-left: 5px solid #16a34a;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
 
-    div[data-testid="stMetricLabel"] {
-        color: #6b7280;
-        font-weight: 600;
-    }
+.impact-box {
+    background-color: #fff7ed;
+    padding: 16px;
+    border-radius: 10px;
+    border-left: 5px solid #f59e0b;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
 
-    div[data-testid="stMetricValue"] {
-        color: #111827;
-        font-weight: 700;
-    }
-
-    .insight-box {
-        background-color: #e0f2fe;
-        padding: 16px;
-        border-radius: 10px;
-        border-left: 5px solid #0284c7;
-        margin-top: 10px;
-        margin-bottom: 10px;
-        color: #0f172a;
-    }
-
-    .summary-box {
-        background-color: #e8f5e9;
-        padding: 16px;
-        border-radius: 10px;
-        border-left: 5px solid #16a34a;
-        margin-top: 10px;
-        margin-bottom: 10px;
-        color: #14532d;
-    }
-
-    .impact-box {
-        background-color: #fff7ed;
-        padding: 16px;
-        border-radius: 10px;
-        border-left: 5px solid #f59e0b;
-        margin-top: 10px;
-        margin-bottom: 10px;
-        color: #7c2d12;
-    }
-
-    .small-note {
-        color: #6b7280;
-        font-size: 0.95rem;
-    }
+.small-note {
+    color: #6b7280;
+    font-size: 0.9rem;
+}
 </style>
 """, unsafe_allow_html=True)
 
-# ---------- Load simulated data ----------
+# ---------- Load data ----------
 df_original = pd.read_csv("data.csv")
 
 # ---------- Filters ----------
 st.subheader("Filters")
-filter_col1, filter_col2 = st.columns(2)
+col1, col2 = st.columns(2)
 
-with filter_col1:
+with col1:
     selected_class = st.selectbox("ABC Class", ["All", "A", "B", "C"])
 
-with filter_col2:
+with col2:
     min_movements = st.slider("Minimum Movements", 0, int(df_original["Movements"].max()), 0)
 
 df = df_original.copy()
@@ -110,297 +87,182 @@ df = df[df["Movements"] >= min_movements].copy()
 
 st.caption(f"Current filter: ABC Class = {selected_class} | Minimum Movements = {min_movements}")
 
-# ---------- KPI calculations ----------
+# ---------- Core Logic ----------
 df["Needs_Relocation"] = df["Current_Location"] != df["Optimal_Location"]
 
-# Illustrative impact assumptions
-# Assumes misaligned SKU relocations reduce handling/pick effort by ~10 minutes per week per SKU
-df["Illustrative_Time_Saved_Min"] = df["Needs_Relocation"].apply(lambda x: 10 if x else 0)
-df["Illustrative_Labor_Impact"] = df["Illustrative_Time_Saved_Min"] * (25 / 60)
+# 🔥 YOUR FINAL ASSUMPTION (aligned with screenshot)
+df["Time_Saved_Min"] = df["Needs_Relocation"].apply(lambda x: 10 if x else 0)
+df["Labor_Impact"] = df["Time_Saved_Min"] * (25 / 60)
 
+# KPIs
 total_skus = len(df)
 misaligned = int(df["Needs_Relocation"].sum())
-misalignment_pct = round((misaligned / total_skus) * 100, 1) if total_skus > 0 else 0.0
+misalignment_pct = round((misaligned / total_skus) * 100, 1)
+
+estimated_time_saved = round(df["Time_Saved_Min"].sum() / 60, 1)
+estimated_labor = round(df["Labor_Impact"].sum(), 0)
 
 priority_df = df_original[
     (df_original["ABC_Class"] == "A") & (df_original["Movements"] > 100)
-].copy()
-
-priority_segment_pct = round((len(priority_df) / len(df_original)) * 100, 1) if len(df_original) > 0 else 0.0
-
-estimated_time_saved = round(df["Illustrative_Time_Saved_Min"].sum() / 60, 1)
-estimated_labor_cost_impact = round(df["Illustrative_Labor_Impact"].sum(), 0)
-
-# ---------- Insight logic ----------
-prime_misplaced = df[
-    (df["ABC_Class"] == "A") &
-    (df["Zone"] != "Prime") &
-    (df["Needs_Relocation"])
 ]
 
-low_in_prime = df[
-    (df["ABC_Class"] == "C") &
-    (df["Zone"] == "Prime")
-]
-
-relocation_candidates = df[df["Needs_Relocation"]].sort_values(
-    by="Movements", ascending=False
-)
-
-top_moves = relocation_candidates[
-    (relocation_candidates["ABC_Class"] == "A") &
-    (relocation_candidates["Movements"] > 100)
-].sort_values(by="Movements", ascending=False)
+priority_pct = round((len(priority_df) / len(df_original)) * 100, 1)
 
 # ---------- Title ----------
 st.title("Warehouse Slotting Optimization Tool")
+
 st.caption("End-to-end warehouse analytics solution built using Python, Streamlit, and simulated operational data.")
-st.write(
-    "Data-driven slotting analysis designed to identify SKU misalignment, prioritize relocation actions, "
-    "and improve warehouse picking efficiency and zone utilization."
-)
-st.caption(
-    "Analyzed SKU-level movement and inventory data to identify misalignment, prioritize high-impact relocations, "
-    "and simulate operational efficiency gains."
-)
 
-st.markdown("<br>", unsafe_allow_html=True)
+st.write("""
+Data-driven slotting analysis designed to identify SKU misalignment, prioritize relocation actions,
+and improve warehouse picking efficiency and zone utilization.
+""")
 
-# ---------- KPI cards ----------
-col1, col2, col3, col4, col5, col6 = st.columns(6)
+st.caption("""
+Analyzed SKU-level movement and inventory data to identify misalignment, prioritize high-impact relocations,
+and simulate operational efficiency gains.
+""")
 
-with col1:
-    st.metric("Total SKUs", total_skus)
+# ---------- KPIs ----------
+k1, k2, k3, k4, k5, k6 = st.columns(6)
 
-with col2:
-    st.metric("Misaligned SKUs", misaligned)
+k1.metric("Total SKUs", total_skus)
+k2.metric("Misaligned SKUs", misaligned)
+k3.metric("Misalignment %", f"{misalignment_pct}%")
+k4.metric("High-Priority Segment %", f"{priority_pct}%")
+k5.metric("Est. Picking Time Saved", f"{estimated_time_saved} hrs/week")
+k6.metric("Est. Labor Impact", f"${estimated_labor:,.0f}")
 
-with col3:
-    st.metric("Misalignment %", f"{misalignment_pct}%")
+st.caption("""
+Illustrative estimate based on assumed 10 min weekly efficiency gain per misaligned SKU and $25/hour labor rate.
+Actual impact would require operational validation.
+""")
 
-with col4:
-    st.metric("High-Priority Segment %", f"{priority_segment_pct}%")
+# ---------- Impact ----------
+st.markdown(f"""
+<div class="impact-box">
+<b>Impact:</b> Identified {misaligned} relocation opportunities across the analyzed SKU set,
+prioritizing high-movement A-class items to improve picking efficiency and optimize Prime zone utilization.
+</div>
+""", unsafe_allow_html=True)
 
-with col5:
-    st.metric("Est. Picking Time (Illustrative)", f"{estimated_time_saved} hrs/week")
+st.markdown("""
+<div class="impact-box">
+<b>Top Finding:</b> High-movement A-class SKUs are not consistently placed in Prime zones,
+indicating missed opportunities to improve pick speed and space utilization.
+</div>
+""", unsafe_allow_html=True)
 
-with col6:
-    st.metric("Est. Labor Impact (Illustrative)", f"${estimated_labor_cost_impact:,.0f}")
-
-st.caption(
-    "Illustrative estimate based on assumed 10 min weekly efficiency gain per misaligned SKU and "
-    "$25/hour labor rate. Actual impact would require operational validation."
-)
-
-st.markdown("<br>", unsafe_allow_html=True)
-
-# ---------- Impact framing ----------
-st.markdown(
-    """
-    <div class="impact-box">
-        <b>Impact:</b> Identified relocation opportunities across the analyzed SKU set, prioritizing
-        high-movement A-class items to improve picking efficiency and optimize Prime zone utilization.
-    </div>
-    """,
-    unsafe_allow_html=True
-)
-
-st.markdown(
-    """
-    <div class="impact-box">
-        <b>Top Finding:</b> High-movement A-class SKUs are not consistently placed in Prime zones,
-        indicating missed opportunities to improve pick speed and space utilization.
-    </div>
-    """,
-    unsafe_allow_html=True
-)
-
-st.markdown(
-    "**Business Impact:** Identified misaligned high-demand SKUs and prioritized relocations "
-    "to improve picking efficiency and optimize warehouse space utilization."
-)
-
-st.markdown("<br>", unsafe_allow_html=True)
+st.markdown(f"""
+**Business Impact:** Potential to reduce pick effort by ~{estimated_time_saved} hours/week
+through targeted relocation of misaligned high-demand SKUs.
+""")
 
 # ---------- Insights ----------
 st.subheader("Key Optimization Insights")
 
-st.write(
-    f"- {len(prime_misplaced)} high-priority (A-class) SKUs are outside Prime zones → relocation opportunity\n"
-    f"- {len(low_in_prime)} low-priority (C-class) SKUs occupy Prime space → inefficient utilization\n"
-    f"- {misaligned} SKUs ({misalignment_pct}%) require relocation based on slotting mismatch"
-)
+prime_misplaced = df[(df["ABC_Class"] == "A") & (df["Zone"] != "Prime") & (df["Needs_Relocation"])]
+low_in_prime = df[(df["ABC_Class"] == "C") & (df["Zone"] == "Prime")]
 
-st.markdown(
-    f"""
-    <div class="summary-box">
-        <b>{misaligned} SKUs ({misalignment_pct}%)</b> require relocation based on slotting mismatch.
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+st.write(f"""
+- {len(prime_misplaced)} high-priority (A-class) SKUs outside Prime zones → relocation opportunity  
+- {len(low_in_prime)} low-priority (C-class) SKUs occupy Prime space → inefficient utilization  
+- {misaligned} SKUs ({misalignment_pct}%) require relocation
+""")
 
-st.markdown(
-    """
-    <div class="insight-box">
-        <b>Recommended Action:</b> Move high-movement A-class SKUs into Prime zones and reassign
-        lower-priority inventory to secondary storage to improve pick speed and reduce congestion.
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+st.markdown(f"""
+<div class="summary-box">
+<b>{misaligned} SKUs ({misalignment_pct}%)</b> require relocation based on slotting mismatch.
+</div>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<div class="insight-box">
+<b>Recommended Action:</b> Move high-movement A-class SKUs into Prime zones and reassign
+lower-priority inventory to secondary storage.
+</div>
+""", unsafe_allow_html=True)
 
 st.markdown("---")
-st.markdown("<br>", unsafe_allow_html=True)
 
-# ---------- Top priority moves ----------
+# ---------- Top Moves ----------
 st.subheader("Top 10 Priority Moves (Highest Impact)")
 
-top_moves_display = top_moves.rename(columns={
-    "Needs_Relocation": "Needs Relocation",
-    "Illustrative_Time_Saved_Min": "Est. Time Saved (min)",
-    "Illustrative_Labor_Impact": "Est. Labor Impact ($)"
-})
+top_moves = df[df["Needs_Relocation"]].sort_values(by="Movements", ascending=False).head(10)
 
-if top_moves_display.empty:
-    st.info("No high-priority A-class relocation moves found under the current filter.")
-else:
-    display_cols = [
-        "SKU_ID", "ABC_Class", "Zone", "Current_Location", "Movements",
-        "Stock_Qty", "Optimal_Location", "Needs Relocation"
-    ]
-    st.caption(f"Showing {len(top_moves_display)} high-impact relocation opportunities based on current filters.")
-    st.dataframe(top_moves_display[display_cols], use_container_width=True, height=350)
+st.caption(f"Showing {len(top_moves)} high-impact relocation opportunities based on current filters.")
+
+st.dataframe(top_moves[
+    ["SKU_ID","ABC_Class","Zone","Current_Location","Movements","Stock_Qty","Optimal_Location","Needs_Relocation"]
+], use_container_width=True)
 
 st.markdown("---")
-st.markdown("<br>", unsafe_allow_html=True)
 
-# ---------- Critical items ----------
+# ---------- Critical SKUs ----------
 st.subheader("A-Class High-Movement SKUs (Critical Items)")
 
-priority_display = priority_df.sort_values(by="Movements", ascending=False)
-priority_cols = [
-    "SKU_ID", "ABC_Class", "Zone", "Current_Location",
-    "Movements", "Stock_Qty", "Optimal_Location"
-]
+st.dataframe(priority_df.sort_values(by="Movements", ascending=False), use_container_width=True)
 
-st.dataframe(priority_display[priority_cols], use_container_width=True, height=420)
-st.caption("These SKUs represent the highest operational impact and should be prioritized for optimal zone placement.")
+st.caption("These SKUs represent the highest operational impact and should be prioritized.")
 
 st.markdown("---")
-st.markdown("<br>", unsafe_allow_html=True)
 
-# ---------- Before / after summary ----------
+# ---------- Before vs After ----------
 st.subheader("Before vs. After Optimization Summary")
 
 before_after = pd.DataFrame({
-    "Scenario": ["Current State", "After Recommended Relocations"],
+    "Scenario": ["Current State", "After Optimization"],
     "Misaligned SKUs": [misaligned, 0],
-    "Illustrative Picking Time Saved (hrs/week)": [0, estimated_time_saved],
-    "Illustrative Labor Impact ($/week)": [0, estimated_labor_cost_impact]
+    "Picking Time Saved (hrs/week)": [0, estimated_time_saved],
+    "Labor Impact ($/week)": [0, estimated_labor]
 })
 
 st.dataframe(before_after, use_container_width=True)
 
 st.markdown("---")
-st.markdown("<br>", unsafe_allow_html=True)
 
 # ---------- Charts ----------
-st.markdown("### Operational Patterns & Optimization Opportunities")
+st.subheader("Operational Patterns & Optimization Opportunities")
 
-chart_col1, chart_col2 = st.columns(2)
+c1, c2 = st.columns(2)
 
-with chart_col1:
-    st.subheader("Current Zone Utilization (Imbalance)")
-    zone_counts = df["Zone"].value_counts().sort_values(ascending=False).reset_index()
-    zone_counts.columns = ["Zone", "Count"]
+with c1:
+    st.markdown("### Current Zone Utilization (Imbalance)")
+    zone = df["Zone"].value_counts().reset_index()
+    zone.columns = ["Zone","Count"]
 
-    zone_chart = alt.Chart(zone_counts).mark_bar(
-        cornerRadiusTopLeft=6,
-        cornerRadiusTopRight=6
-    ).encode(
-        x=alt.X("Zone:N", sort=None, title=""),
-        y=alt.Y("Count:Q", title=""),
-        color=alt.Color(
-            "Zone:N",
-            scale=alt.Scale(
-                domain=["Prime", "Secondary", "Reserve"],
-                range=["#2563eb", "#16a34a", "#f59e0b"]
-            ),
-            legend=None
+    st.altair_chart(
+        alt.Chart(zone).mark_bar().encode(
+            x="Zone",
+            y="Count",
+            color="Zone"
         ),
-        tooltip=["Zone", "Count"]
-    ).properties(
-        height=320
+        use_container_width=True
     )
 
-    zone_text = alt.Chart(zone_counts).mark_text(
-        dy=-8,
-        fontSize=11,
-        color="#374151"
-    ).encode(
-        x=alt.X("Zone:N", sort=None),
-        y="Count:Q",
-        text="Count:Q"
-    )
+with c2:
+    st.markdown("### Inventory Mix by ABC Class (Optimization Opportunity)")
+    abc = df["ABC_Class"].value_counts().reset_index()
+    abc.columns = ["Class","Count"]
 
-    st.altair_chart(zone_chart + zone_text, use_container_width=True, theme=None)
-
-with chart_col2:
-    st.subheader("Inventory Mix by ABC Class (Optimization Opportunity)")
-    abc_counts = df["ABC_Class"].value_counts().sort_index().reset_index()
-    abc_counts.columns = ["ABC_Class", "Count"]
-
-    abc_chart = alt.Chart(abc_counts).mark_bar(
-        cornerRadiusTopLeft=6,
-        cornerRadiusTopRight=6
-    ).encode(
-        x=alt.X("ABC_Class:N", title=""),
-        y=alt.Y("Count:Q", title=""),
-        color=alt.Color(
-            "ABC_Class:N",
-            scale=alt.Scale(
-                domain=["A", "B", "C"],
-                range=["#dc2626", "#2563eb", "#16a34a"]
-            ),
-            legend=None
+    st.altair_chart(
+        alt.Chart(abc).mark_bar().encode(
+            x="Class",
+            y="Count",
+            color="Class"
         ),
-        tooltip=["ABC_Class", "Count"]
-    ).properties(
-        height=320
+        use_container_width=True
     )
-
-    abc_text = alt.Chart(abc_counts).mark_text(
-        dy=-8,
-        fontSize=11,
-        color="#374151"
-    ).encode(
-        x="ABC_Class:N",
-        y="Count:Q",
-        text="Count:Q"
-    )
-
-    st.altair_chart(abc_chart + abc_text, use_container_width=True, theme=None)
-
-st.markdown("<br>", unsafe_allow_html=True)
 
 # ---------- Interpretation ----------
-st.markdown(
-    """
-    <div class="insight-box">
-        <b>Interpretation:</b> The strongest optimization opportunities come from high-movement
-        A-class SKUs outside Prime zones and lower-priority SKUs occupying Prime storage space.
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+st.markdown("""
+<div class="insight-box">
+<b>Interpretation:</b> The strongest optimization opportunities come from high-movement
+A-class SKUs outside Prime zones and lower-priority SKUs occupying Prime space.
+</div>
+""", unsafe_allow_html=True)
 
 st.markdown("---")
-st.caption(
-    "Portfolio Project | Warehouse Slotting Optimization | Python, SQL, Streamlit | "
-    "Focus: Operations Analytics, Inventory Optimization, Decision Support"
-)
-st.markdown(
-    '<p class="small-note">This public version uses simulated data for demonstration purposes.</p>',
-    unsafe_allow_html=True
-)
+
+st.caption("Portfolio Project | Warehouse Slotting Optimization | Python, SQL, Streamlit")
+st.markdown('<p class="small-note">This public version uses simulated data.</p>', unsafe_allow_html=True)
