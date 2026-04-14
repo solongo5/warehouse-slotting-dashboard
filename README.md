@@ -3,6 +3,7 @@
 End-to-end warehouse analytics solution designed to identify SKU misalignment, prioritize relocation actions, and improve picking efficiency and space utilization.
 
 Built using Python, SQL, and Streamlit with simulated operational data.
+
 *Note: This project is based on a real warehouse optimization use case. All data has been anonymized and simulated due to confidentiality requirements.*
 ---
 
