@@ -7,7 +7,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# ---------- Styling ----------
+# --- Styling ---
 st.markdown("""
 <style>
 [data-testid="stAppViewContainer"] {
@@ -65,15 +65,10 @@ div[data-testid="stMetric"] {
 </style>
 """, unsafe_allow_html=True)
 
-# ---------- Load data ----------
+# --- Load data ---
 df_original = pd.read_csv("data.csv")
-df = df_original.copy()
 
-st.write("APP VERSION: Apr 14 8:45 PM")
-st.write(df_original[["Current_Location", "Optimal_Location"]].head(5))
-st.write("Misaligned:", int((df_original["Current_Location"] != df_original["Optimal_Location"]).sum()))
-
-# ---------- Filters ----------
+# --- Filters ---
 st.subheader("Filters")
 col1, col2 = st.columns(2)
 
@@ -92,10 +87,9 @@ df = df[df["Movements"] >= min_movements].copy()
 
 st.caption(f"Current filter: ABC Class = {selected_class} | Minimum Movements = {min_movements}")
 
-# ---------- Core Logic ----------
+# --- Core Logic ---
 df["Needs_Relocation"] = df["Current_Location"] != df["Optimal_Location"]
 
-# 🔥 YOUR FINAL ASSUMPTION (aligned with screenshot)
 df["Time_Saved_Min"] = df["Needs_Relocation"].apply(lambda x: 10 if x else 0)
 df["Labor_Impact"] = df["Time_Saved_Min"] * (25 / 60)
 
@@ -113,7 +107,7 @@ priority_df = df_original[
 
 priority_pct = round((len(priority_df) / len(df_original)) * 100, 1)
 
-# ---------- Title ----------
+# --- Title ---
 st.title("Warehouse Slotting Optimization Tool")
 
 st.caption("End-to-end warehouse analytics solution built using Python, Streamlit, and simulated operational data.")
@@ -143,7 +137,7 @@ Illustrative estimate based on assumed 10 min weekly efficiency gain per misalig
 Actual impact would require operational validation.
 """)
 
-# ---------- Impact ----------
+# --- Impact ---
 st.markdown(f"""
 <div class="impact-box">
 <b>Impact:</b> Identified {misaligned} relocation opportunities across the analyzed SKU set,
@@ -153,8 +147,7 @@ prioritizing high-movement A-class items to improve picking efficiency and optim
 
 st.markdown("""
 <div class="impact-box">
-<b>Top Finding:</b> High-movement A-class SKUs are not consistently placed in Prime zones,
-indicating missed opportunities to improve pick speed and space utilization.
+<b>Key takeaway:</b> Several high-movement A-class SKUs are outside Prime zones.
 </div>
 """, unsafe_allow_html=True)
 
@@ -163,7 +156,7 @@ st.markdown(f"""
 through targeted relocation of misaligned high-demand SKUs.
 """)
 
-# ---------- Insights ----------
+# --- Insights ---
 st.subheader("Key Optimization Insights")
 
 prime_misplaced = df[(df["ABC_Class"] == "A") & (df["Zone"] != "Prime") & (df["Needs_Relocation"])]
@@ -190,7 +183,7 @@ lower-priority inventory to secondary storage.
 
 st.markdown("---")
 
-# ---------- Top Moves ----------
+# --- Top Moves ---
 st.subheader("Top 10 Priority Moves (Highest Impact)")
 
 top_moves = df[df["Needs_Relocation"]].sort_values(by="Movements", ascending=False).head(10)
@@ -203,7 +196,7 @@ st.dataframe(top_moves[
 
 st.markdown("---")
 
-# ---------- Critical SKUs ----------
+# --- Critical SKUs ---
 st.subheader("A-Class High-Movement SKUs (Critical Items)")
 
 st.dataframe(priority_df.sort_values(by="Movements", ascending=False), use_container_width=True)
@@ -212,7 +205,7 @@ st.caption("These SKUs represent the highest operational impact and should be pr
 
 st.markdown("---")
 
-# ---------- Before vs After ----------
+# --- Before vs After ---
 st.subheader("Before vs. After Optimization Summary")
 
 before_after = pd.DataFrame({
@@ -259,7 +252,7 @@ with c2:
         use_container_width=True
     )
 
-# ---------- Interpretation ----------
+# --- Interpretation ---
 st.markdown("""
 <div class="insight-box">
 <b>Interpretation:</b> The strongest optimization opportunities come from high-movement
