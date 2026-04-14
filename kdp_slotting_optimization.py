@@ -179,12 +179,15 @@ with col4:
     st.metric("High-Priority Segment %", f"{priority_segment_pct}%")
 
 with col5:
-    st.metric("Est. Picking Time Saved", f"{estimated_time_saved} hrs/week")
+    st.metric("Est. Picking Time (Illustrative)", f"{estimated_time_saved} hrs/week")
 
 with col6:
-    st.metric("Est. Labor Cost Impact", f"${estimated_labor_cost_impact:,.0f}")
+    st.metric("Est. Labor Impact (Illustrative)", f"${estimated_labor_cost_impact:,.0f}")
 
-st.caption("Assumes ~0.5 min reduction per pick after relocation and $25/hour labor rate (illustrative estimate)")
+st.caption(
+    "Illustrative estimate based on assumed 0.5 min reduction per pick and $25/hour labor rate. "
+    "Actual impact would require operational validation."
+)
 
 st.markdown("<br>", unsafe_allow_html=True)
 
@@ -281,8 +284,8 @@ st.subheader("Before vs. After Optimization Summary")
 before_after = pd.DataFrame({
     "Scenario": ["Current State", "After Recommended Relocations"],
     "Misaligned SKUs": [misaligned, 0],
-    "Estimated Picking Time Saved (hrs/week)": [0, estimated_time_saved],
-    "Estimated Labor Cost Impact ($/week)": [0, estimated_labor_cost_impact]
+    "Illustrative Picking Time Saved (hrs/week)": [0, estimated_time_saved],
+    "Illustrative Labor Impact ($/week)": [0, estimated_labor_cost_impact]
 })
 
 st.dataframe(before_after, use_container_width=True)
