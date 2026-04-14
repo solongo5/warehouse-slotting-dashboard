@@ -1,4 +1,6 @@
 # Warehouse Slotting Optimization Tool
+🔗 Live Demo: https://warehouse-slotting-dashboard-d7mn4sgq5bx9fdnp2wmei.streamlit.app  
+💻 GitHub: https://github.com/Solongo5/warehouse-slotting-dashboard
 
 End-to-end warehouse analytics solution designed to identify SKU misalignment, prioritize relocation actions, and improve picking efficiency and space utilization.
 
