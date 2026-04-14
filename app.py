@@ -69,6 +69,10 @@ div[data-testid="stMetric"] {
 df_original = pd.read_csv("data.csv")
 df = df_original.copy()
 
+st.write("APP VERSION: Apr 14 8:45 PM")
+st.write(df_original[["Current_Location", "Optimal_Location"]].head(5))
+st.write("Misaligned:", int((df_original["Current_Location"] != df_original["Optimal_Location"]).sum()))
+
 # ---------- Filters ----------
 st.subheader("Filters")
 col1, col2 = st.columns(2)
