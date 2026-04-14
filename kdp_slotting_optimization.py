@@ -91,33 +91,42 @@ st.markdown("""
 # ---------- Load simulated data ----------
 df_original = pd.read_csv("data.csv")
 
-# ---------- Filter ----------
+# ---------- Filters ----------
 st.subheader("Filters")
-selected_class = st.selectbox("ABC Class", ["All", "A", "B", "C"])
+filter_col1, filter_col2 = st.columns(2)
+
+with filter_col1:
+    selected_class = st.selectbox("ABC Class", ["All", "A", "B", "C"])
+
+with filter_col2:
+    min_movements = st.slider("Minimum Movements", 0, int(df_original["Movements"].max()), 0)
+
+df = df_original.copy()
 
 if selected_class != "All":
-    df = df_original[df_original["ABC_Class"] == selected_class].copy()
-else:
-    df = df_original.copy()
+    df = df[df["ABC_Class"] == selected_class]
 
-st.caption(f"Current filter: {selected_class}")
+df = df[df["Movements"] >= min_movements].copy()
+
+st.caption(f"Current filter: ABC Class = {selected_class} | Minimum Movements = {min_movements}")
 
 # ---------- KPI calculations ----------
 df["Needs_Relocation"] = df["Current_Location"] != df["Optimal_Location"]
+df["Estimated_Pick_Minutes_Saved"] = df["Needs_Relocation"].astype(int) * 0.5
+df["Estimated_Labor_Cost_Impact"] = df["Estimated_Pick_Minutes_Saved"] * (25 / 60)
 
 total_skus = len(df)
 misaligned = int(df["Needs_Relocation"].sum())
 misalignment_pct = round((misaligned / total_skus) * 100, 1) if total_skus > 0 else 0.0
 
-# A-class / high-movement segment calculated on full dataset
 priority_df = df_original[
     (df_original["ABC_Class"] == "A") & (df_original["Movements"] > 100)
 ].copy()
 
 priority_segment_pct = round((len(priority_df) / len(df_original)) * 100, 1) if len(df_original) > 0 else 0.0
 
-# Estimated impact metric
-estimated_time_saved = round(misaligned * 0.5, 1)  # simple demo assumption
+estimated_time_saved = round(df["Estimated_Pick_Minutes_Saved"].sum() / 60, 1)
+estimated_labor_cost_impact = round(df["Estimated_Labor_Cost_Impact"].sum(), 0)
 
 # ---------- Insight logic ----------
 prime_misplaced = df[
@@ -140,7 +149,6 @@ top_moves = relocation_candidates[
     (relocation_candidates["Movements"] > 100)
 ].sort_values(by="Movements", ascending=False).head(10)
 
-
 # ---------- Title ----------
 st.title("Warehouse Slotting Optimization Tool")
 st.caption("End-to-end warehouse analytics solution built using Python, Streamlit, and simulated operational data.")
@@ -148,7 +156,6 @@ st.write(
     "Data-driven slotting analysis designed to identify SKU misalignment, prioritize relocation actions, "
     "and improve warehouse picking efficiency and zone utilization."
 )
-
 st.caption(
     "Analyzed SKU-level movement and inventory data to identify misalignment, prioritize high-impact relocations, "
     "and simulate operational efficiency gains."
@@ -156,9 +163,8 @@ st.caption(
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-
 # ---------- KPI cards ----------
-col1, col2, col3, col4, col5 = st.columns(5)
+col1, col2, col3, col4, col5, col6 = st.columns(6)
 
 with col1:
     st.metric("Total SKUs", total_skus)
@@ -174,8 +180,12 @@ with col4:
 
 with col5:
     st.metric("Est. Picking Time Saved", f"{estimated_time_saved} hrs/week")
-    
-st.caption("Assumes ~0.5 min reduction per pick after relocation (illustrative estimate)")
+
+with col6:
+    st.metric("Est. Labor Cost Impact", f"${estimated_labor_cost_impact:,.0f}")
+
+st.caption("Assumes ~0.5 min reduction per pick after relocation and $25/hour labor rate (illustrative estimate)")
+
 st.markdown("<br>", unsafe_allow_html=True)
 
 # ---------- Impact framing ----------
@@ -234,14 +244,18 @@ st.markdown("<br>", unsafe_allow_html=True)
 
 # ---------- Top priority moves ----------
 st.subheader("Top 10 Priority Moves (Highest Impact)")
-st.dataframe(top_moves, use_container_width=True, height=350)
+
+if top_moves.empty:
+    st.info("No high-priority A-class relocation moves found under the current filter.")
+else:
+    st.dataframe(top_moves, use_container_width=True, height=350)
 
 st.markdown("---")
 st.markdown("<br>", unsafe_allow_html=True)
 
-# ---------- Recommended relocation actions ----------
-st.subheader("Recommended Relocation Actions")
-st.dataframe(relocation_candidates, use_container_width=True)
+# ---------- All relocation candidates ----------
+st.subheader("All Relocation Candidates (Ranked by Impact)")
+st.dataframe(relocation_candidates, use_container_width=True, height=420)
 
 st.markdown("---")
 st.markdown("<br>", unsafe_allow_html=True)
@@ -254,7 +268,24 @@ priority_display = priority_df.sort_values(by="Movements", ascending=False)
 if priority_display.empty:
     st.info("No A-class high-movement SKUs found under current data conditions.")
 else:
-    st.dataframe(priority_display, use_container_width=True)
+    st.dataframe(priority_display, use_container_width=True, height=420)
+
+st.caption("These SKUs represent the highest operational impact and should be prioritized for optimal zone placement.")
+
+st.markdown("---")
+st.markdown("<br>", unsafe_allow_html=True)
+
+# ---------- Before / after summary ----------
+st.subheader("Before vs. After Optimization Summary")
+
+before_after = pd.DataFrame({
+    "Scenario": ["Current State", "After Recommended Relocations"],
+    "Misaligned SKUs": [misaligned, 0],
+    "Estimated Picking Time Saved (hrs/week)": [0, estimated_time_saved],
+    "Estimated Labor Cost Impact ($/week)": [0, estimated_labor_cost_impact]
+})
+
+st.dataframe(before_after, use_container_width=True)
 
 st.markdown("---")
 st.markdown("<br>", unsafe_allow_html=True)
@@ -263,15 +294,15 @@ st.markdown("<br>", unsafe_allow_html=True)
 chart_col1, chart_col2 = st.columns(2)
 
 with chart_col1:
-    st.subheader("Current Zone Utilization (Potential Imbalance)")
-    zone_counts = df["Zone"].value_counts().reset_index()
+    st.subheader("Zone Utilization")
+    zone_counts = df["Zone"].value_counts().sort_values(ascending=False).reset_index()
     zone_counts.columns = ["Zone", "Count"]
 
     zone_chart = alt.Chart(zone_counts).mark_bar(
         cornerRadiusTopLeft=6,
         cornerRadiusTopRight=6
     ).encode(
-        x=alt.X("Zone:N", sort="-y", title=""),
+        x=alt.X("Zone:N", sort=None, title=""),
         y=alt.Y("Count:Q", title=""),
         color=alt.Color(
             "Zone:N",
@@ -283,14 +314,24 @@ with chart_col1:
         ),
         tooltip=["Zone", "Count"]
     ).properties(
-        height=300
+        height=320
     )
 
-    st.altair_chart(zone_chart, use_container_width=True, theme=None)
+    zone_text = alt.Chart(zone_counts).mark_text(
+        dy=-8,
+        fontSize=11,
+        color="#374151"
+    ).encode(
+        x=alt.X("Zone:N", sort=None),
+        y="Count:Q",
+        text="Count:Q"
+    )
+
+    st.altair_chart(zone_chart + zone_text, use_container_width=True, theme=None)
 
 with chart_col2:
-    st.subheader("Inventory Mix by ABC Class (Optimization Opportunity)")
-    abc_counts = df["ABC_Class"].value_counts().reset_index()
+    st.subheader("ABC Class Mix")
+    abc_counts = df["ABC_Class"].value_counts().sort_index().reset_index()
     abc_counts.columns = ["ABC_Class", "Count"]
 
     abc_chart = alt.Chart(abc_counts).mark_bar(
@@ -309,10 +350,20 @@ with chart_col2:
         ),
         tooltip=["ABC_Class", "Count"]
     ).properties(
-        height=300
+        height=320
     )
 
-    st.altair_chart(abc_chart, use_container_width=True, theme=None)
+    abc_text = alt.Chart(abc_counts).mark_text(
+        dy=-8,
+        fontSize=11,
+        color="#374151"
+    ).encode(
+        x="ABC_Class:N",
+        y="Count:Q",
+        text="Count:Q"
+    )
+
+    st.altair_chart(abc_chart + abc_text, use_container_width=True, theme=None)
 
 st.markdown("<br>", unsafe_allow_html=True)
 
@@ -327,6 +378,8 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+st.markdown("---")
+st.caption("Portfolio Project | Warehouse Slotting Optimization | Built with Python, SQL, and Streamlit")
 st.markdown(
     '<p class="small-note">This public version uses simulated data for demonstration purposes.</p>',
     unsafe_allow_html=True
