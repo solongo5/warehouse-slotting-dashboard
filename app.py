@@ -110,17 +110,7 @@ priority_pct = round((len(priority_df) / len(df_original)) * 100, 1)
 # --- Title ---
 st.title("Warehouse Slotting Optimization Tool")
 
-st.caption("End-to-end warehouse analytics solution built using Python, Streamlit, and simulated operational data.")
-
-st.write("""
-Data-driven slotting analysis designed to identify SKU misalignment, prioritize relocation actions,
-and improve warehouse picking efficiency and zone utilization.
-""")
-
-st.caption("""
-Analyzed SKU-level movement and inventory data to identify misalignment, prioritize high-impact relocations,
-and simulate operational efficiency gains.
-""")
+st.caption("Analyze SKU placement to identify misalignment and prioritize relocation.")
 
 # ---------- KPIs ----------
 k1, k2, k3, k4, k5, k6 = st.columns(6)
@@ -133,8 +123,7 @@ k5.metric("Est. Picking Time Saved", f"{estimated_time_saved} hrs/week")
 k6.metric("Est. Labor Impact", f"${estimated_labor:,.0f}")
 
 st.caption("""
-Illustrative estimate based on assumed 10 min weekly efficiency gain per misaligned SKU and $25/hour labor rate.
-Actual impact would require operational validation.
+Estimate based on 10 minutes weekly time savings per SKU and $25/hour labor rate.
 """)
 
 # --- Impact ---
@@ -220,7 +209,7 @@ st.dataframe(before_after, use_container_width=True)
 st.markdown("---")
 
 # ---------- Charts ----------
-st.subheader("Operational Patterns & Optimization Opportunities")
+st.subheader("Warehouse Patterns")
 
 c1, c2 = st.columns(2)
 
@@ -252,10 +241,10 @@ with c2:
         use_container_width=True
     )
 
-# --- Interpretation ---
+# --- Key takeaway ---
 st.markdown("""
 <div class="insight-box">
-<b>Interpretation:</b> The strongest optimization opportunities come from high-movement
+<b>Key takeaway:</b> The strongest optimization opportunities come from high-movement
 A-class SKUs outside Prime zones and lower-priority SKUs occupying Prime space.
 </div>
 """, unsafe_allow_html=True)
