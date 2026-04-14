@@ -9,11 +9,19 @@ st.set_page_config(
 # ---------- Custom styling ----------
 st.markdown("""
 <style>
-    .main {
+    [data-testid="stAppViewContainer"] {
         background-color: #f3f4f6;
     }
 
-    .block-container {
+    [data-testid="stHeader"] {
+        background: rgba(0,0,0,0);
+    }
+
+    [data-testid="stToolbar"] {
+        right: 2rem;
+    }
+
+    .main .block-container {
         padding-top: 2rem;
         padding-bottom: 2rem;
     }
