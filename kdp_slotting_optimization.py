@@ -1,5 +1,6 @@
 import pandas as pd
 import streamlit as st
+import altair as alt
 
 st.set_page_config(
     page_title="Warehouse Slotting Optimization Tool",
@@ -14,11 +15,7 @@ st.markdown("""
     }
 
     [data-testid="stHeader"] {
-        background: rgba(0,0,0,0);
-    }
-
-    [data-testid="stToolbar"] {
-        right: 2rem;
+        background: rgba(0, 0, 0, 0);
     }
 
     .main .block-container {
@@ -74,6 +71,165 @@ st.markdown("""
         color: #14532d;
     }
 
+    .small-note {
+        color: #6b7280;
+        font-size: 0.95rem;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# ---------- Load simulated data ----------
+df = pd.read_csv("data.csv")
+
+# ---------- Filter ----------
+st.subheader("Filters")
+selected_class = st.selectbox("ABC Class", ["All", "A", "B", "C"])
+
+if selected_class != "All":
+    df = df[df["ABC_Class"] == selected_class].copy()
+else:
+    df = df.copy()
+
+st.caption(f"Current filter: {selected_class}")
+
+# ---------- KPI calculations ----------
+df["Needs_Relocation"] = df["Current_Location"] != df["Optimal_Location"]
+
+total_skus = len(df)
+misaligned = int(df["Needs_Relocation"].sum())
+misalignment_pct = round((misaligned / total_skus) * 100, 1) if total_skus > 0 else 0.0
+
+priority_df = df[(df["ABC_Class"] == "A") & (df["Movements"] > 100)].copy()
+priority_segment_pct = round((len(priority_df) / total_skus) * 100, 1) if total_skus > 0 else 0.0
+
+# ---------- Insight logic ----------
+prime_misplaced = df[
+    (df["ABC_Class"] == "A") &
+    (df["Zone"] != "Prime") &
+    (df["Needs_Relocation"])
+]
+
+low_in_prime = df[
+    (df["ABC_Class"] == "C") &
+    (df["Zone"] == "Prime")
+]
+
+# ---------- Title ----------
+st.title("Warehouse Slotting Optimization Tool")
+st.write(
+    "Data-driven slotting analysis using simulated warehouse data to identify "
+    "SKU misalignment and relocation opportunities."
+)
+
+st.markdown("###")
+
+# ---------- KPI cards ----------
+col1, col2, col3, col4 = st.columns(4)
+
+with col1:
+    st.metric("Total SKUs", total_skus)
+
+with col2:
+    st.metric("Misaligned SKUs", misaligned)
+
+with col3:
+    st.metric("Misalignment %", f"{misalignment_pct}%")
+
+with col4:
+    st.metric("High-Priority Segment %", f"{priority_segment_pct}%")
+
+# ---------- Insights ----------
+st.subheader("Key Optimization Insights")
+
+st.write(
+    f"- {len(prime_misplaced)} high-priority (A-class) SKUs are outside Prime zones → relocation opportunity\n"
+    f"- {len(low_in_prime)} low-priority (C-class) SKUs occupy Prime space → inefficient utilization\n"
+    f"- {misaligned} SKUs ({misalignment_pct}%) require relocation based on slotting mismatch"
+)
+
+st.markdown(
+    f"""
+    <div class="summary-box">
+        <b>{misaligned} SKUs ({misalignment_pct}%)</b> require relocation based on slotting mismatch.
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
+st.markdown("---")
+
+# ---------- Relocation candidates ----------
+st.subheader("Relocation Candidates")
+
+relocation_candidates = df[df["Needs_Relocation"]].sort_values(
+    by="Movements", ascending=False
+)
+
+st.dataframe(relocation_candidates, use_container_width=True)
+
+st.markdown("---")
+
+# ---------- High-priority segment ----------
+st.subheader("High-Priority SKU Segment")
+
+st.dataframe(
+    priority_df.sort_values(by="Movements", ascending=False),
+    use_container_width=True
+)
+
+st.markdown("---")
+
+# ---------- Charts ----------
+chart_col1, chart_col2 = st.columns(2)
+
+with chart_col1:
+    st.subheader("Zone Distribution")
+    zone_counts = df["Zone"].value_counts().reset_index()
+    zone_counts.columns = ["Zone", "Count"]
+
+    zone_chart = alt.Chart(zone_counts).mark_bar(
+        color="#2563eb",
+        cornerRadiusTopLeft=5,
+        cornerRadiusTopRight=5
+    ).encode(
+        x=alt.X("Zone:N", sort="-y", title="Zone"),
+        y=alt.Y("Count:Q", title="Count")
+    )
+
+    st.altair_chart(zone_chart, use_container_width=True)
+
+with chart_col2:
+    st.subheader("ABC Class Distribution")
+    abc_counts = df["ABC_Class"].value_counts().reset_index()
+    abc_counts.columns = ["ABC_Class", "Count"]
+
+    abc_chart = alt.Chart(abc_counts).mark_bar(
+        color="#16a34a",
+        cornerRadiusTopLeft=5,
+        cornerRadiusTopRight=5
+    ).encode(
+        x=alt.X("ABC_Class:N", sort="-y", title="ABC Class"),
+        y=alt.Y("Count:Q", title="Count")
+    )
+
+    st.altair_chart(abc_chart, use_container_width=True)
+
+# ---------- Interpretation ----------
+st.markdown(
+    """
+    <div class="insight-box">
+        <b>Interpretation:</b> The strongest optimization opportunities come from
+        high-movement A-class SKUs outside Prime zones and lower-priority SKUs
+        occupying Prime storage space.
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
+st.markdown(
+    '<p class="small-note">This public version uses simulated data for demonstration purposes.</p>',
+    unsafe_allow_html=True
+)
     .small-note {
         color: #6b7280;
         font-size: 0.95rem;
