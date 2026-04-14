@@ -135,7 +135,11 @@ relocation_candidates = df[df["Needs_Relocation"]].sort_values(
     by="Movements", ascending=False
 )
 
-top_moves = relocation_candidates.head(10)
+top_moves = relocation_candidates[
+    (relocation_candidates["ABC_Class"] == "A") &
+    (relocation_candidates["Movements"] > 100)
+].sort_values(by="Movements", ascending=False).head(10)
+
 
 # ---------- Title ----------
 st.title("Warehouse Slotting Optimization Tool")
@@ -163,8 +167,9 @@ with col4:
     st.metric("High-Priority Segment %", f"{priority_segment_pct}%")
 
 with col5:
-    st.metric("Est. Picking Time Saved", f"{estimated_time_saved} hrs/wk")
-
+    st.metric("Est. Picking Time Saved", f"{estimated_time_saved} hrs/week")
+    
+st.caption("Assumes ~0.5 min reduction per pick after relocation (illustrative estimate)")
 st.markdown("<br>", unsafe_allow_html=True)
 
 # ---------- Impact framing ----------
