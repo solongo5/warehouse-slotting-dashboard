@@ -2,7 +2,7 @@
 🔗 Live Demo: https://warehouse-slotting-dashboard-d7mn4sgqs5bx9fdnp2wmei.streamlit.app  
 💻 GitHub: https://github.com/solongo5/warehouse-slotting-dashboard
 
-End-to-end warehouse analytics solution designed to identify SKU misalignment, prioritize relocation actions, and improve picking efficiency and space utilization.
+Analyze SKU placement to identify misalignment and prioritize relocation actions.
 
 Built using Python, SQL, and Streamlit with simulated operational data.
 
