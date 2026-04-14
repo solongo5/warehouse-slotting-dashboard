@@ -114,8 +114,8 @@ st.caption(f"Current filter: ABC Class = {selected_class} | Minimum Movements = 
 df["Needs_Relocation"] = df["Current_Location"] != df["Optimal_Location"]
 
 # Illustrative impact assumptions
-# Assumes misaligned SKU relocations reduce handling/pick effort by ~3 minutes per week per SKU
-df["Illustrative_Time_Saved_Min"] = df["Needs_Relocation"].apply(lambda x: 3 if x else 0)
+# Assumes misaligned SKU relocations reduce handling/pick effort by ~10 minutes per week per SKU
+df["Illustrative_Time_Saved_Min"] = df["Needs_Relocation"].apply(lambda x: 10 if x else 0)
 df["Illustrative_Labor_Impact"] = df["Illustrative_Time_Saved_Min"] * (25 / 60)
 
 total_skus = len(df)
@@ -150,7 +150,7 @@ relocation_candidates = df[df["Needs_Relocation"]].sort_values(
 top_moves = relocation_candidates[
     (relocation_candidates["ABC_Class"] == "A") &
     (relocation_candidates["Movements"] > 100)
-].sort_values(by="Movements", ascending=False).head(10)
+].sort_values(by="Movements", ascending=False)
 
 # ---------- Title ----------
 st.title("Warehouse Slotting Optimization Tool")
@@ -188,7 +188,7 @@ with col6:
     st.metric("Est. Labor Impact (Illustrative)", f"${estimated_labor_cost_impact:,.0f}")
 
 st.caption(
-    "Illustrative estimate based on assumed 3 min reduction per pick-related effort for misaligned SKUs and "
+    "Illustrative estimate based on assumed 10 min weekly efficiency gain per misaligned SKU and "
     "$25/hour labor rate. Actual impact would require operational validation."
 )
 
@@ -269,6 +269,7 @@ else:
         "SKU_ID", "ABC_Class", "Zone", "Current_Location", "Movements",
         "Stock_Qty", "Optimal_Location", "Needs Relocation"
     ]
+    st.caption(f"Showing {len(top_moves_display)} high-impact relocation opportunities based on current filters.")
     st.dataframe(top_moves_display[display_cols], use_container_width=True, height=350)
 
 st.markdown("---")
@@ -277,10 +278,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 # ---------- Critical items ----------
 st.subheader("A-Class High-Movement SKUs (Critical Items)")
 
-priority_display = priority_df.sort_values(by="Movements", ascending=False).rename(columns={
-    "Needs_Relocation": "Needs Relocation"
-})
-
+priority_display = priority_df.sort_values(by="Movements", ascending=False)
 priority_cols = [
     "SKU_ID", "ABC_Class", "Zone", "Current_Location",
     "Movements", "Stock_Qty", "Optimal_Location"
@@ -308,10 +306,12 @@ st.markdown("---")
 st.markdown("<br>", unsafe_allow_html=True)
 
 # ---------- Charts ----------
+st.markdown("### Operational Patterns & Optimization Opportunities")
+
 chart_col1, chart_col2 = st.columns(2)
 
 with chart_col1:
-    st.subheader("Zone Utilization")
+    st.subheader("Current Zone Utilization (Imbalance)")
     zone_counts = df["Zone"].value_counts().sort_values(ascending=False).reset_index()
     zone_counts.columns = ["Zone", "Count"]
 
@@ -347,7 +347,7 @@ with chart_col1:
     st.altair_chart(zone_chart + zone_text, use_container_width=True, theme=None)
 
 with chart_col2:
-    st.subheader("ABC Class Mix")
+    st.subheader("Inventory Mix by ABC Class (Optimization Opportunity)")
     abc_counts = df["ABC_Class"].value_counts().sort_index().reset_index()
     abc_counts.columns = ["ABC_Class", "Count"]
 
@@ -396,7 +396,10 @@ st.markdown(
 )
 
 st.markdown("---")
-st.caption("Portfolio Project | Warehouse Slotting Optimization | Built with Python, SQL, and Streamlit")
+st.caption(
+    "Portfolio Project | Warehouse Slotting Optimization | Python, SQL, Streamlit | "
+    "Focus: Operations Analytics, Inventory Optimization, Decision Support"
+)
 st.markdown(
     '<p class="small-note">This public version uses simulated data for demonstration purposes.</p>',
     unsafe_allow_html=True
