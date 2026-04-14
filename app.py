@@ -75,6 +75,8 @@ st.write(
 )
 st.write(df_original[["Current_Location", "Optimal_Location"]].head(10))
 
+st.write(df[["Zone", "Optimal_Location"]].head())
+
 # ---------- Filters ----------
 st.subheader("Filters")
 col1, col2 = st.columns(2)
