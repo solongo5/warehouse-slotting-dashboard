@@ -6,6 +6,13 @@ st.set_page_config(page_title="Warehouse Slotting Optimization Tool", layout="wi
 # Load simulated data
 df = pd.read_csv("data.csv")
 
+# Filter
+selected_class = st.selectbox("Filter by ABC Class", ["All", "A", "B", "C"])
+
+if selected_class != "All":
+    df = df[df["ABC_Class"] == selected_class]
+st.caption(f"Current filter: {selected_class}")
+
 # KPI calculations
 total_skus = len(df)
 misaligned = (df["Current_Location"] != df["Optimal_Location"]).sum()
