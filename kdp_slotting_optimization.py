@@ -109,11 +109,15 @@ total_skus = len(df)
 misaligned = int(df["Needs_Relocation"].sum())
 misalignment_pct = round((misaligned / total_skus) * 100, 1) if total_skus > 0 else 0.0
 
+# A-class / high-movement segment calculated on full dataset
 priority_df = df_original[
     (df_original["ABC_Class"] == "A") & (df_original["Movements"] > 100)
 ].copy()
 
 priority_segment_pct = round((len(priority_df) / len(df_original)) * 100, 1) if len(df_original) > 0 else 0.0
+
+# Estimated impact metric
+estimated_time_saved = round(misaligned * 0.5, 1)  # simple demo assumption
 
 # ---------- Insight logic ----------
 prime_misplaced = df[
@@ -127,17 +131,24 @@ low_in_prime = df[
     (df["Zone"] == "Prime")
 ]
 
+relocation_candidates = df[df["Needs_Relocation"]].sort_values(
+    by="Movements", ascending=False
+)
+
+top_moves = relocation_candidates.head(10)
+
 # ---------- Title ----------
 st.title("Warehouse Slotting Optimization Tool")
+st.caption("End-to-end warehouse analytics solution built using Python, Streamlit, and simulated operational data.")
 st.write(
-    "Data-driven slotting analysis using simulated warehouse data to identify "
-    "SKU misalignment and relocation opportunities."
+    "Data-driven slotting analysis designed to identify SKU misalignment, prioritize relocation actions, "
+    "and improve warehouse picking efficiency and zone utilization."
 )
 
 st.markdown("<br>", unsafe_allow_html=True)
 
 # ---------- KPI cards ----------
-col1, col2, col3, col4 = st.columns(4)
+col1, col2, col3, col4, col5 = st.columns(5)
 
 with col1:
     st.metric("Total SKUs", total_skus)
@@ -151,26 +162,27 @@ with col3:
 with col4:
     st.metric("High-Priority Segment %", f"{priority_segment_pct}%")
 
+with col5:
+    st.metric("Est. Picking Time Saved", f"{estimated_time_saved} hrs/wk")
+
 st.markdown("<br>", unsafe_allow_html=True)
 
 # ---------- Impact framing ----------
 st.markdown(
     """
     <div class="impact-box">
-        <b>Impact:</b> Identified relocation opportunities across the analyzed SKU set,
-        prioritizing high-movement A-class items to improve picking efficiency and
-        optimize Prime zone utilization.
+        <b>Impact:</b> Identified relocation opportunities across the analyzed SKU set, prioritizing
+        high-movement A-class items to improve picking efficiency and optimize Prime zone utilization.
     </div>
     """,
     unsafe_allow_html=True
 )
 
-# ---------- Top finding ----------
 st.markdown(
     """
     <div class="impact-box">
         <b>Top Finding:</b> High-movement A-class SKUs are not consistently placed in Prime zones,
-        indicating missed opportunities to optimize pick efficiency.
+        indicating missed opportunities to improve pick speed and space utilization.
     </div>
     """,
     unsafe_allow_html=True
@@ -199,9 +211,8 @@ st.markdown(
 st.markdown(
     """
     <div class="insight-box">
-        <b>Recommended Action:</b> Move high-movement A-class SKUs into Prime zones and
-        reassign lower-priority inventory to secondary storage to improve pick speed
-        and reduce congestion.
+        <b>Recommended Action:</b> Move high-movement A-class SKUs into Prime zones and reassign
+        lower-priority inventory to secondary storage to improve pick speed and reduce congestion.
     </div>
     """,
     unsafe_allow_html=True
@@ -210,13 +221,15 @@ st.markdown(
 st.markdown("---")
 st.markdown("<br>", unsafe_allow_html=True)
 
-# ---------- Relocation actions ----------
+# ---------- Top priority moves ----------
+st.subheader("Top 10 Priority Moves (Highest Impact)")
+st.dataframe(top_moves, use_container_width=True)
+
+st.markdown("---")
+st.markdown("<br>", unsafe_allow_html=True)
+
+# ---------- Recommended relocation actions ----------
 st.subheader("Recommended Relocation Actions")
-
-relocation_candidates = df[df["Needs_Relocation"]].sort_values(
-    by="Movements", ascending=False
-)
-
 st.dataframe(relocation_candidates, use_container_width=True)
 
 st.markdown("---")
@@ -239,7 +252,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 chart_col1, chart_col2 = st.columns(2)
 
 with chart_col1:
-    st.subheader("Zone Distribution")
+    st.subheader("Current Zone Utilization (Potential Imbalance)")
     zone_counts = df["Zone"].value_counts().reset_index()
     zone_counts.columns = ["Zone", "Count"]
 
@@ -265,7 +278,7 @@ with chart_col1:
     st.altair_chart(zone_chart, use_container_width=True, theme=None)
 
 with chart_col2:
-    st.subheader("ABC Class Distribution")
+    st.subheader("Inventory Mix by ABC Class (Optimization Opportunity)")
     abc_counts = df["ABC_Class"].value_counts().reset_index()
     abc_counts.columns = ["ABC_Class", "Count"]
 
@@ -296,9 +309,8 @@ st.markdown("<br>", unsafe_allow_html=True)
 st.markdown(
     """
     <div class="insight-box">
-        <b>Interpretation:</b> The strongest optimization opportunities come from
-        high-movement A-class SKUs outside Prime zones and lower-priority SKUs
-        occupying Prime storage space.
+        <b>Interpretation:</b> The strongest optimization opportunities come from high-movement
+        A-class SKUs outside Prime zones and lower-priority SKUs occupying Prime storage space.
     </div>
     """,
     unsafe_allow_html=True
