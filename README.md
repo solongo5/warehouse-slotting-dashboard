@@ -1,9 +1,10 @@
 # Warehouse Slotting Optimization Tool
 
 🔗 Live Demo: https://warehouse-slotting-dashboard-d7mn4sgqs5bx9fdnp2wmei.streamlit.app
+
 💻 GitHub: https://github.com/solongo5/warehouse-slotting-dashboard
 
-End-to-end warehouse analytics solution designed to identify SKU misalignment, prioritize relocation actions, and improve warehouse slotting decisions using SQL, Python, and Streamlit.
+Interactive warehouse slotting optimization dashboard built with SQL, Python, and Streamlit to identify inventory misalignment, prioritize relocation opportunities, and support data-driven warehouse decision making.
 
 > **Note:** This project is based on a real warehouse optimization use case. All data has been anonymized and simulated due to confidentiality requirements.
 
@@ -11,7 +12,7 @@ End-to-end warehouse analytics solution designed to identify SKU misalignment, p
 
 # Dashboard Preview
 
-<img width="1200" alt="Warehouse Dashboard" src="dashboard.png">
+<img width="1200" alt="Warehouse Dashboard" src="images/dashboard.png">
 
 ---
 
@@ -100,30 +101,35 @@ This approach identifies which products are picked most frequently.
 
 ## 4. Slotting Logic
 
-ABC classification and Speed classification were combined to determine recommended warehouse placement.
+ABC classification and movement velocity were combined to determine recommended warehouse placement.
 
-Examples:
+| ABC | Speed  | Recommended Zone |
+| --- | ------ | ---------------- |
+| A   | Fast   | Prime            |
+| A   | Medium | Prime            |
+| B   | Fast   | Prime            |
+| B   | Medium | Secondary        |
+| C   | Slow   | Reserve          |
 
-| ABC | Speed  | Recommended Zone     |
-| --- | ------ | -------------------- |
-| A   | Fast   | Prime                |
-| A   | Medium | Prime                |
-| B   | Fast   | Prime                |
-| B   | Medium | Secondary            |
-| C   | Slow   | Secondary / Overflow |
-
-This allows warehouse space to be aligned with operational demand.
+This allows warehouse space to be aligned with operational demand and picking frequency.
 
 ---
 
 # Key Results
 
-- Identified warehouse slotting misalignment opportunities
-- Prioritized relocation actions using ABC and velocity classifications
-- Developed zone recommendation logic based on operational demand
-- Built an interactive dashboard for warehouse decision support
-- Visualized warehouse occupancy and inventory distribution
-  
+Using simulated warehouse inventory and movement data modeled after a real distribution center use case:
+
+* 281 finished-goods SKUs analyzed
+* 5,617 warehouse storage bins represented
+* 423K historical movement records simulated
+* 59 relocation candidates identified (21.0% of inventory)
+* 11 A-class SKUs found outside Prime picking zones
+* 37 lower-priority SKUs occupying Prime warehouse space
+* Estimated 9.8 labor hours saved per week through targeted re-slotting
+* Estimated labor impact of approximately $246 per week (based on a $25/hr labor rate)
+
+These findings demonstrate how inventory segmentation and slotting optimization can identify high-impact relocation opportunities without requiring a full warehouse redesign.
+
 ---
 
 # Dashboard Features
@@ -132,12 +138,14 @@ This allows warehouse space to be aligned with operational demand.
 
 Tracks:
 
-* Total SKUs
-* Comparable SKUs
+* Total SKUs analyzed
 * Relocation candidates
-* Relocation rate
-* Misalignment percentage
-* High-priority inventory outside Prime zones
+* Relocation percentage
+* Total warehouse storage bins
+* Historical movement records
+* Facility size (sq ft)
+* Estimated labor savings
+* Estimated labor cost impact
 
 ---
 
@@ -145,41 +153,39 @@ Tracks:
 
 Identifies:
 
-* High Priority moves
-* Medium Priority moves
-* Low Priority moves
+* High-priority relocation candidates
+* A-class inventory outside Prime zones
+* Prime-space utilization opportunities
 
 Includes:
 
 * Top relocation opportunities
-* Downloadable relocation action list
-* Priority-based filtering
+* Priority-based ranking
+* Actionable relocation recommendations
 
 ---
 
-## Zone Flow Analysis
+## Warehouse Bin Map
 
-Visualizes:
+Interactive warehouse visualization displaying:
 
-* Current warehouse placement
-* Recommended placement
-* Prime-to-secondary movement opportunities
-* Secondary-to-prime movement opportunities
+* Prime, Secondary, and Cold storage zones
+* Inventory distribution by classification
+* Available and occupied locations
+* Relocation opportunities
 
-Helps quantify warehouse re-slotting requirements.
+Provides a visual representation of warehouse slotting decisions.
 
 ---
 
-## Warehouse Map Visualization
+## Optimization Insights
 
-Interactive warehouse map displaying:
+Highlights:
 
-* Current inventory distribution
-* Warehouse lanes
-* Zone occupancy
-* Recommended slotting assignments
-
-Provides a visual representation of warehouse optimization opportunities.
+* Inventory placement inefficiencies
+* Prime zone utilization opportunities
+* High-impact relocation candidates
+* Estimated operational improvements
 
 ---
 
@@ -215,26 +221,30 @@ Provides a visual representation of warehouse optimization opportunities.
 
 # Project Architecture
 
-1. Extract warehouse inventory and movement data
+1. Extract inventory and movement data
 2. Calculate ABC classifications
-3. Calculate Speed classifications
+3. Calculate movement velocity classifications
 4. Generate slotting recommendations
-5. Identify relocation opportunities
-6. Prioritize actions based on business impact
-7. Visualize results through Streamlit dashboards
+5. Identify relocation candidates
+6. Prioritize opportunities by operational impact
+7. Visualize insights through interactive dashboards
 
 ---
 
 # Business Impact
 
-The solution provides a structured framework for warehouse re-slotting decisions by:
+The solution provides a repeatable framework for warehouse slotting analysis and relocation prioritization.
 
-* Improving inventory placement visibility
-* Prioritizing high-impact relocation opportunities
-* Supporting warehouse labor efficiency
-* Reducing picker travel distance
-* Increasing utilization of Prime warehouse space
-* Enabling data-driven warehouse optimization
+Potential operational benefits include:
+
+* Improved placement of high-priority inventory
+* Better utilization of Prime picking locations
+* Reduced picker travel distance
+* Increased visibility into warehouse slotting inefficiencies
+* Data-driven relocation prioritization
+* Estimated labor savings through targeted inventory re-slotting
+
+Rather than recommending large-scale warehouse redesigns, the solution focuses on identifying the relatively small percentage of SKUs that create the greatest operational impact.
 
 ---
 
@@ -244,13 +254,11 @@ The solution provides a structured framework for warehouse re-slotting decisions
 warehouse-slotting-dashboard/
 │
 ├── app.py
+├── data.csv
 ├── requirements.txt
 ├── README.md
-├── images/
-│   └── dashboard.png
 │
-└── data/
-    └── simulated_data.csv
+└── dashboard.png
 ```
 
 ---
@@ -259,4 +267,4 @@ warehouse-slotting-dashboard/
 
 This project is intended for portfolio and educational purposes only.
 
-The original business use case was adapted from a warehouse optimization project. All data, identifiers, and operational details have been anonymized and/or simulated to protect confidential information.
+The original business use case was adapted from a warehouse optimization project. All data, identifiers, and operational details have been anonymized and simulated to protect confidential information.
