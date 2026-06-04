@@ -409,6 +409,60 @@ st.markdown("<div style='margin:12px 0; border-bottom:1px solid #1e2235;'></div>
 
 
 # =========================================================
+# BIN CAPACITY SUMMARY
+# =========================================================
+
+st.markdown("""
+<div style="
+font-family:'IBM Plex Mono',monospace;
+font-size:11px;
+color:#00c9a7;
+letter-spacing:0.1em;
+text-transform:uppercase;
+margin-bottom:12px;
+">
+▸ Warehouse Bin Capacity
+</div>
+""", unsafe_allow_html=True)
+
+b1, b2, b3 = st.columns(3)
+
+with b1:
+    st.markdown(
+        kpi_card(
+            "Zone 1 Prime Bins",
+            "1,363",
+            "#52c41a",
+            "high-priority storage"
+        ),
+        unsafe_allow_html=True
+    )
+
+with b2:
+    st.markdown(
+        kpi_card(
+            "Zone 2 Secondary Bins",
+            "1,230",
+            "#f59e0b",
+            "general inventory"
+        ),
+        unsafe_allow_html=True
+    )
+
+with b3:
+    st.markdown(
+        kpi_card(
+            "Cold Zone Bins",
+            "70",
+            "#38bdf8",
+            "temperature-controlled"
+        ),
+        unsafe_allow_html=True
+    )
+
+st.markdown("<br>", unsafe_allow_html=True)
+
+# =========================================================
 # WAREHOUSE BIN MAP
 # =========================================================
 st.markdown("""
