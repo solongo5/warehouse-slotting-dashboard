@@ -240,36 +240,122 @@ low_in_prime = df[
 # KPI CARDS
 # =========================================================
 def kpi_card(label, value, color="#00c9a7", sub=None):
-    sub_html = f'<div style="font-size:11px;color:#475569;margin-top:4px;">{sub}</div>' if sub else ""
+    sub_html = (
+        f'<div style="font-size:11px;color:#475569;margin-top:4px;">{sub}</div>'
+        if sub else ""
+    )
+
     return f"""
     <div style="
-        background: #111420;
-        border: 1px solid #1e2235;
-        border-top: 2px solid {color};
-        border-radius: 10px;
-        padding: 18px 20px;
-        text-align: left;
+        background:#111420;
+        border:1px solid #1e2235;
+        border-top:2px solid {color};
+        border-radius:10px;
+        padding:18px 20px;
+        text-align:left;
+        min-height:95px;
     ">
-        <div style="font-size:11px;color:#475569;font-family:'IBM Plex Mono',monospace;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;">{label}</div>
-        <div style="font-size:28px;font-weight:700;color:{color};font-family:'IBM Plex Sans',sans-serif;line-height:1;">{value}</div>
+        <div style="
+            font-size:11px;
+            color:#475569;
+            font-family:'IBM Plex Mono',monospace;
+            letter-spacing:0.08em;
+            text-transform:uppercase;
+            margin-bottom:8px;
+        ">
+            {label}
+        </div>
+
+        <div style="
+            font-size:28px;
+            font-weight:700;
+            color:{color};
+            font-family:'IBM Plex Sans',sans-serif;
+            line-height:1;
+        ">
+            {value}
+        </div>
+
         {sub_html}
-    </div>"""
+    </div>
+    """
 
 
-cols = st.columns(6)
+# =========================================================
+# EXECUTIVE KPI ROW
+# =========================================================
+
+cols = st.columns(8)
+
 cards = [
-    ("Total SKUs", str(total_skus), "#e2e8f0", "active finished-goods SKUs"),
-    ("Relocation SKUs", str(misaligned), "#f59e0b", "recommended to move"),
-    ("Relocation %", f"{misalignment_pct}%", "#ef4444", "of analyzed SKUs"),
-    ("A-Class SKUs", str(a_count), "#3b82f6", "highest priority group"),
-    ("B-Class SKUs", str(b_count), "#00c9a7", "medium priority group"),
-    ("C-Class SKUs", str(c_count), "#a78bfa", "lower priority group"),
+    (
+        "Total SKUs",
+        str(total_skus),
+        "#e2e8f0",
+        "active finished-goods SKUs"
+    ),
+
+    (
+        "Relocation SKUs",
+        str(misaligned),
+        "#f59e0b",
+        "recommended to move"
+    ),
+
+    (
+        "Relocation %",
+        f"{misalignment_pct:.1f}%",
+        "#ef4444",
+        "of analyzed SKUs"
+    ),
+
+    (
+        "Storage Bins",
+        "5,617",
+        "#ec4899",
+        "facility storage locations"
+    ),
+
+    (
+        "SAP Records",
+        "423K",
+        "#3b82f6",
+        "movement transactions analyzed"
+    ),
+
+    (
+        "Facility Size",
+        "224K",
+        "#00c9a7",
+        "square feet"
+    ),
+
+    (
+        "Est. Time Saved",
+        "9.8 hrs/wk",
+        "#14b8a6",
+        "illustrative estimate"
+    ),
+
+    (
+        "Est. Labor Impact",
+        "$246/wk",
+        "#a78bfa",
+        "at $25/hr labor rate"
+    ),
 ]
 
 for col, (label, value, color, sub) in zip(cols, cards):
-    col.markdown(kpi_card(label, value, color, sub), unsafe_allow_html=True)
+    with col:
+        st.markdown(
+            kpi_card(label, value, color, sub),
+            unsafe_allow_html=True
+        )
 
-st.markdown("<div style='margin-top:8px;'></div>", unsafe_allow_html=True)
+st.markdown(
+    "<div style='margin-top:10px;'></div>",
+    unsafe_allow_html=True
+)
 
 
 # =========================================================
