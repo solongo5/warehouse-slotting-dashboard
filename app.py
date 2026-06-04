@@ -134,7 +134,6 @@ st.markdown("""
 # =========================================================
 df_original = pd.read_csv("data.csv")
 
-# Normalize column names so the app works with your new simulated dataset
 if "Current_Zone" in df_original.columns and "Zone" not in df_original.columns:
     df_original["Zone"] = df_original["Current_Zone"]
 
@@ -198,11 +197,10 @@ if selected_class != "All":
     df = df[df["ABC_Class"] == selected_class]
 
 df = df[df["Movements"] >= min_movements].copy()
-
-# Keep relocation flag from data.csv so total remains 59 in unfiltered view
 df["Needs_Relocation"] = df["Needs_Relocation"].astype(bool)
 
-# Assumptions for directional impact estimate
+# Directional estimate assumption:
+# each relocation candidate saves 10 minutes/week, labor rate $25/hour
 df["Time_Saved_Min"] = df["Needs_Relocation"].apply(lambda x: 10 if x else 0)
 df["Labor_Impact"] = df["Time_Saved_Min"] * (25 / 60)
 
@@ -213,16 +211,10 @@ misalignment_pct = round((misaligned / total_skus) * 100, 1) if total_skus else 
 estimated_time_saved = round(df["Time_Saved_Min"].sum() / 60, 1)
 estimated_labor = round(df["Labor_Impact"].sum(), 0)
 
-a_count = int((df["ABC_Class"] == "A").sum())
-b_count = int((df["ABC_Class"] == "B").sum())
-c_count = int((df["ABC_Class"] == "C").sum())
-
 priority_df = df_original[
     (df_original["ABC_Class"] == "A") &
     (df_original["Movements"] > 100)
 ].copy()
-
-priority_pct = round((len(priority_df) / len(df_original)) * 100, 1)
 
 prime_misplaced = df[
     (df["ABC_Class"] == "A") &
@@ -239,9 +231,7 @@ low_in_prime = df[
 # =========================================================
 # KPI CARDS
 # =========================================================
-
 def kpi_card(label, value, color="#00c9a7", sub=None):
-
     sub_html = ""
     if sub:
         sub_html = f"""
@@ -295,78 +285,63 @@ def kpi_card(label, value, color="#00c9a7", sub=None):
 # =========================================================
 # EXECUTIVE KPI ROW
 # =========================================================
-
 cols = st.columns(8)
 
 cards = [
-
     (
         "Total SKUs",
-        "281",
+        str(total_skus),
         "#e2e8f0",
         "active finished-goods SKUs"
     ),
-
     (
         "Relocation SKUs",
-        "59",
+        str(misaligned),
         "#f59e0b",
         "recommended to move"
     ),
-
     (
         "Relocation %",
-        "21.0%",
+        f"{misalignment_pct:.1f}%",
         "#ef4444",
         "of analyzed SKUs"
     ),
-
     (
         "Storage Bins",
         "5,617",
         "#ec4899",
         "facility storage locations"
     ),
-
     (
         "SAP Records",
         "423K",
         "#3b82f6",
         "movement transactions analyzed"
     ),
-
     (
         "Facility Size",
         "224K",
         "#00c9a7",
         "square feet"
     ),
-
     (
         "Time Saved",
-        "9.8 hrs/wk",
+        f"{estimated_time_saved:.1f} hrs/wk",
         "#14b8a6",
         "estimated picking gain"
     ),
-
     (
         "Labor Impact",
-        "$246/wk",
+        f"${int(estimated_labor):,}/wk",
         "#a78bfa",
         "@ $25/hr labor rate"
     )
 ]
 
 for col, (label, value, color, sub) in zip(cols, cards):
-
     with col:
         st.markdown(
-            kpi_card(
-                label,
-                value,
-                color,
-                sub
-            ),
+            kpi_card(label, value, color, sub),
             unsafe_allow_html=True
         )
 
@@ -407,60 +382,6 @@ with b2:
 
 st.markdown("<div style='margin:12px 0; border-bottom:1px solid #1e2235;'></div>", unsafe_allow_html=True)
 
-
-# =========================================================
-# BIN CAPACITY SUMMARY
-# =========================================================
-
-st.markdown("""
-<div style="
-font-family:'IBM Plex Mono',monospace;
-font-size:11px;
-color:#00c9a7;
-letter-spacing:0.1em;
-text-transform:uppercase;
-margin-bottom:12px;
-">
-▸ Warehouse Bin Capacity
-</div>
-""", unsafe_allow_html=True)
-
-b1, b2, b3 = st.columns(3)
-
-with b1:
-    st.markdown(
-        kpi_card(
-            "Zone 1 Prime Bins",
-            "1,363",
-            "#52c41a",
-            "high-priority storage"
-        ),
-        unsafe_allow_html=True
-    )
-
-with b2:
-    st.markdown(
-        kpi_card(
-            "Zone 2 Secondary Bins",
-            "1,230",
-            "#f59e0b",
-            "general inventory"
-        ),
-        unsafe_allow_html=True
-    )
-
-with b3:
-    st.markdown(
-        kpi_card(
-            "Cold Zone Bins",
-            "70",
-            "#38bdf8",
-            "temperature-controlled"
-        ),
-        unsafe_allow_html=True
-    )
-
-st.markdown("<br>", unsafe_allow_html=True)
 
 # =========================================================
 # WAREHOUSE BIN MAP
@@ -694,7 +615,7 @@ st.markdown("<div style='margin:12px 0;'></div>", unsafe_allow_html=True)
 
 st.markdown(banner(
     "✅", "Recommended Action:",
-    "Prioritize the 59 relocation candidates first, especially A-class SKUs outside Prime zones, instead of re-slotting the entire warehouse.",
+    f"Prioritize the {misaligned} relocation candidates first, especially A-class SKUs outside Prime zones, instead of re-slotting the entire warehouse.",
     "#0a1a12", "#00c9a7"
 ), unsafe_allow_html=True)
 
@@ -783,8 +704,6 @@ st.markdown("""
 ▸ Operational Patterns & Optimization Opportunities
 </div>
 """, unsafe_allow_html=True)
-
-chart_cfg = alt.theme.enable("dark") if hasattr(alt.theme, "enable") else None
 
 DARK_CHART = {
     "config": {
