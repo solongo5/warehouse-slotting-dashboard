@@ -1,150 +1,264 @@
 # Warehouse Slotting Optimization Tool
-🔗 Live Demo: https://warehouse-slotting-dashboard-d7mn4sgqs5bx9fdnp2wmei.streamlit.app  
+
+🔗 Live Demo: https://warehouse-slotting-dashboard-d7mn4sgqs5bx9fdnp2wmei.streamlit.app
 💻 GitHub: https://github.com/solongo5/warehouse-slotting-dashboard
 
-Analyze SKU placement to identify misalignment and prioritize relocation actions.
+End-to-end warehouse analytics solution designed to identify SKU misalignment, prioritize relocation actions, and improve warehouse slotting decisions using SQL, Python, and Streamlit.
 
-Built using Python, SQL, and Streamlit with simulated operational data.
-
-> **Note:** This project is based on a real warehouse optimization use case. Data has been anonymized and simulated due to confidentiality requirements.
----
-
-## 📌 Problem
-
-Warehouse slotting directly impacts picking efficiency, labor cost, and throughput.
-
-In many operations:
-- High-demand SKUs are not placed in optimal (Prime) locations  
-- Low-priority SKUs occupy valuable picking space  
-- No clear prioritization exists for relocation decisions  
-
-This results in:
-- Increased travel time  
-- Lower picking productivity  
-- Inefficient space utilization  
+> **Note:** This project is based on a real warehouse optimization use case. All data has been anonymized and simulated due to confidentiality requirements.
 
 ---
 
-## 🎯 Objective
+# Dashboard Preview
 
-Develop a data-driven tool to:
-
-- Identify misaligned SKUs  
-- Prioritize high-impact relocation opportunities  
-- Improve warehouse efficiency using ABC classification and movement data  
-- Simulate potential operational gains  
+<img width="1200" alt="Warehouse Dashboard" src="images/dashboard.png">
 
 ---
 
-## ⚙️ Approach
+# Business Problem
 
-### 1. Data Processing
-- SKU-level movement data (~400K records simulated)
-- Inventory location mapping
-- ABC classification based on demand
+Warehouse slotting directly impacts picking efficiency, labor utilization, and throughput.
 
-### 2. Logic & Analysis
-- Defined **slotting mismatch**:
-  - Current Location ≠ Optimal Location  
-- Identified **high-priority SKUs**:
-  - A-class + high movement  
-- Ranked relocation candidates based on:
-  - Movement frequency (proxy for operational impact)
+In many warehouse environments:
 
-### 3. KPI Framework
-- Total SKUs  
-- Misaligned SKUs  
-- Misalignment %  
-- High-priority segment %  
-- Estimated picking time saved  
-- Estimated labor cost impact  
+* High-demand SKUs are not stored in optimal locations
+* Prime picking locations are occupied by lower-priority inventory
+* Relocation decisions are often reactive rather than data-driven
+* No standardized prioritization exists for warehouse re-slotting
 
-### 4. Simulation (Illustrative)
-- Assumed:
-  - 10 minutes weekly efficiency gain per misaligned SKU  
-  - $25/hour labor rate  
-- Used to estimate operational impact (not real production data)
+These conditions can increase picker travel time, reduce productivity, and limit warehouse efficiency.
 
 ---
 
-## 📊 Key Results
+# Objective
 
-- **120 SKUs analyzed**
-- **26 SKUs (21.7%) identified as misaligned**
-- High-impact opportunities concentrated in:
-  - A-class SKUs outside Prime zones  
-  - C-class SKUs occupying Prime space  
+Develop a data-driven warehouse slotting solution to:
 
-### Estimated Impact (Illustrative)
-- ~4.3 hours/week picking time reduction  
-- ~$108/week labor cost savings  
+* Identify inventory location misalignment
+* Classify inventory based on business importance and movement velocity
+* Prioritize relocation opportunities
+* Recommend optimal warehouse zones
+* Support warehouse decision-making through interactive dashboards
 
 ---
 
-## 💡 Key Insights
+# Methodology
 
-- A small subset of SKUs drives most operational impact  
-- Misplacement of high-movement SKUs creates disproportionate inefficiency  
-- Prime storage space is often under-optimized  
+## 1. Data Preparation
 
----
+Warehouse inventory, location, and movement data were processed using Azure SQL and Python.
 
-## 🚀 Solution
+Key datasets included:
 
-The tool provides:
-
-- 🔍 Filterable analysis (ABC class, movement thresholds)  
-- 📊 KPI dashboard for quick performance assessment  
-- 📈 Ranked relocation recommendations  
-- ⚡ Identification of highest-impact moves  
-- 📉 Before vs. after optimization simulation  
+* Inventory master data
+* Warehouse location assignments
+* Material movement history
+* Stock quantities
+* Warehouse zone definitions
 
 ---
 
-## 🖥️ Dashboard Preview
+## 2. ABC Classification
 
-Key components:
-- KPI summary panel  
-- Top 10 priority relocation actions  
-- A-class critical SKU analysis  
-- Before vs. after optimization comparison  
-- Zone utilization and ABC distribution charts  
+SKUs were classified according to outbound inventory contribution.
 
----
+### A Class
 
-## 🧠 Business Value
+Highest-value inventory contributing the largest share of outbound volume.
 
-This solution demonstrates how data can:
+### B Class
 
-- Improve warehouse picking efficiency  
-- Reduce operational labor effort  
-- Enable data-driven slotting decisions  
-- Support scalable warehouse optimization strategies  
+Moderate-value inventory.
+
+### C Class
+
+Lower-value inventory with reduced operational impact.
+
+This classification helps prioritize warehouse space allocation based on business value.
 
 ---
 
-## ⚠️ Notes
+## 3. Speed Classification
 
-⚠️ Data & Confidentiality
+Movement velocity was calculated using historical outbound transactions.
 
-This project is inspired by a real-world warehouse optimization initiative.  
-Due to data privacy and confidentiality constraints, all datasets used here are fully simulated and do not represent actual company data.  
+### Fast
 
-The analytical approach, KPI framework, and optimization logic reflect real operational scenarios.
+40+ issue events
+
+### Medium
+
+10–39 issue events
+
+### Slow
+
+Fewer than 10 issue events
+
+This approach identifies which products are picked most frequently.
+
 ---
 
-## 🛠️ Tech Stack
+## 4. Slotting Logic
 
-- Python (Pandas)
-- Streamlit
-- SQL (data modeling)
-- Altair (visualization)
+ABC classification and Speed classification were combined to determine recommended warehouse placement.
+
+Examples:
+
+| ABC | Speed  | Recommended Zone     |
+| --- | ------ | -------------------- |
+| A   | Fast   | Prime                |
+| A   | Medium | Prime                |
+| B   | Fast   | Prime                |
+| B   | Medium | Secondary            |
+| C   | Slow   | Secondary / Overflow |
+
+This allows warehouse space to be aligned with operational demand.
 
 ---
 
-## 📌 Author
+# Key Results
 
-Solongo Boldtseren  
-MSBA Candidate – University of Washington  
+* 528 total SKUs analyzed
+* 160 comparable finished-goods SKUs evaluated
+* 108 relocation candidates identified
+* 20.5% relocation rate across inventory
+* 67.5% of analyzed SKUs found outside recommended zones
+* 20 high-priority A/Fast SKUs identified outside Prime locations
+* 29 lower-priority SKUs occupying Prime warehouse space
 
-Focus: Supply Chain Analytics | Operations Optimization | Data-Driven Decision Making
+---
+
+# Dashboard Features
+
+## Executive KPI Dashboard
+
+Tracks:
+
+* Total SKUs
+* Comparable SKUs
+* Relocation candidates
+* Relocation rate
+* Misalignment percentage
+* High-priority inventory outside Prime zones
+
+---
+
+## Relocation Prioritization
+
+Identifies:
+
+* High Priority moves
+* Medium Priority moves
+* Low Priority moves
+
+Includes:
+
+* Top relocation opportunities
+* Downloadable relocation action list
+* Priority-based filtering
+
+---
+
+## Zone Flow Analysis
+
+Visualizes:
+
+* Current warehouse placement
+* Recommended placement
+* Prime-to-secondary movement opportunities
+* Secondary-to-prime movement opportunities
+
+Helps quantify warehouse re-slotting requirements.
+
+---
+
+## Warehouse Map Visualization
+
+Interactive warehouse map displaying:
+
+* Current inventory distribution
+* Warehouse lanes
+* Zone occupancy
+* Recommended slotting assignments
+
+Provides a visual representation of warehouse optimization opportunities.
+
+---
+
+# Technology Stack
+
+### Data Engineering
+
+* Azure SQL
+* SQL Views
+* Data Modeling
+
+### Analytics
+
+* Python
+* Pandas
+* NumPy
+
+### Visualization
+
+* Streamlit
+* Plotly
+* Interactive Dashboards
+
+### Supply Chain Techniques
+
+* ABC Analysis
+* Velocity Analysis
+* Slotting Optimization
+* Warehouse Analytics
+* Inventory Segmentation
+
+---
+
+# Project Architecture
+
+1. Extract warehouse inventory and movement data
+2. Calculate ABC classifications
+3. Calculate Speed classifications
+4. Generate slotting recommendations
+5. Identify relocation opportunities
+6. Prioritize actions based on business impact
+7. Visualize results through Streamlit dashboards
+
+---
+
+# Business Impact
+
+The solution provides a structured framework for warehouse re-slotting decisions by:
+
+* Improving inventory placement visibility
+* Prioritizing high-impact relocation opportunities
+* Supporting warehouse labor efficiency
+* Reducing picker travel distance
+* Increasing utilization of Prime warehouse space
+* Enabling data-driven warehouse optimization
+
+---
+
+# Repository Structure
+
+```text
+warehouse-slotting-dashboard/
+│
+├── app.py
+├── requirements.txt
+├── README.md
+├── images/
+│   └── dashboard.png
+│
+└── data/
+    └── simulated_data.csv
+```
+
+---
+
+# Disclaimer
+
+This project is intended for portfolio and educational purposes only.
+
+The original business use case was adapted from a warehouse optimization project. All data, identifiers, and operational details have been anonymized and/or simulated to protect confidential information.
