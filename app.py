@@ -32,7 +32,6 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"] {
     color: #cbd5e1 !important;
 }
 
-/* Remove default streamlit padding */
 .main .block-container {
     padding-top: 0rem !important;
     padding-left: 2rem !important;
@@ -40,23 +39,19 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"] {
     max-width: 100% !important;
 }
 
-/* Hide default title styles */
 h1, h2, h3 {
     font-family: 'IBM Plex Sans', sans-serif !important;
     color: #f1f5f9 !important;
 }
 
-/* Dataframe dark styling */
 [data-testid="stDataFrame"] {
     background: #111420 !important;
 }
 
-/* Metric overrides */
 [data-testid="stMetric"] {
     background: transparent !important;
 }
 
-/* Selectbox and multiselect */
 [data-testid="stSelectbox"] > div,
 [data-baseweb="select"] {
     background-color: #1a1f2e !important;
@@ -68,22 +63,18 @@ div[data-baseweb="popover"] {
     background-color: #1a1f2e !important;
 }
 
-/* Slider track */
 [data-testid="stSlider"] > div > div > div > div {
     background: #00c9a7 !important;
 }
 
-/* Divider */
 hr {
     border-color: #1e2235 !important;
 }
 
-/* Caption */
 [data-testid="stCaptionContainer"] p {
     color: #64748b !important;
 }
 
-/* Download button */
 [data-testid="stDownloadButton"] button {
     background: #1a1f2e !important;
     border: 1px solid #2d3450 !important;
@@ -143,6 +134,18 @@ st.markdown("""
 # =========================================================
 df_original = pd.read_csv("data.csv")
 
+# Normalize column names so the app works with your new simulated dataset
+if "Current_Zone" in df_original.columns and "Zone" not in df_original.columns:
+    df_original["Zone"] = df_original["Current_Zone"]
+
+if "Recommended_Zone" not in df_original.columns:
+    df_original["Recommended_Zone"] = df_original["Zone"]
+
+if "Needs_Relocation" in df_original.columns:
+    df_original["Needs_Relocation"] = df_original["Needs_Relocation"].astype(int).astype(bool)
+else:
+    df_original["Needs_Relocation"] = df_original["Current_Location"] != df_original["Optimal_Location"]
+
 
 # =========================================================
 # SIDEBAR FILTERS
@@ -165,7 +168,6 @@ min_movements = st.sidebar.slider("Minimum Movements", 0, int(df_original["Movem
 
 st.sidebar.markdown("---")
 
-# Zone Breakdown static panel (mirrors teammate's sidebar stats)
 st.sidebar.markdown("""
 <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#00c9a7; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:10px;">Zone Breakdown</div>
 <table style="width:100%; font-size:12px; border-collapse:collapse; color:#94a3b8;">
@@ -191,27 +193,47 @@ ABC: {selected_class} &nbsp;|&nbsp; Min Moves: {min_movements}
 # FILTER DATA
 # =========================================================
 df = df_original.copy()
+
 if selected_class != "All":
     df = df[df["ABC_Class"] == selected_class]
+
 df = df[df["Movements"] >= min_movements].copy()
 
-df["Needs_Relocation"] = df["Current_Location"] != df["Optimal_Location"]
+# Keep relocation flag from data.csv so total remains 59 in unfiltered view
+df["Needs_Relocation"] = df["Needs_Relocation"].astype(bool)
+
+# Assumptions for directional impact estimate
 df["Time_Saved_Min"] = df["Needs_Relocation"].apply(lambda x: 10 if x else 0)
 df["Labor_Impact"] = df["Time_Saved_Min"] * (25 / 60)
 
 total_skus = len(df)
 misaligned = int(df["Needs_Relocation"].sum())
 misalignment_pct = round((misaligned / total_skus) * 100, 1) if total_skus else 0
+
 estimated_time_saved = round(df["Time_Saved_Min"].sum() / 60, 1)
 estimated_labor = round(df["Labor_Impact"].sum(), 0)
 
+a_count = int((df["ABC_Class"] == "A").sum())
+b_count = int((df["ABC_Class"] == "B").sum())
+c_count = int((df["ABC_Class"] == "C").sum())
+
 priority_df = df_original[
-    (df_original["ABC_Class"] == "A") & (df_original["Movements"] > 100)
-]
+    (df_original["ABC_Class"] == "A") &
+    (df_original["Movements"] > 100)
+].copy()
+
 priority_pct = round((len(priority_df) / len(df_original)) * 100, 1)
 
-prime_misplaced = df[(df["ABC_Class"] == "A") & (df["Zone"] != "Prime") & df["Needs_Relocation"]]
-low_in_prime = df[(df["ABC_Class"] == "C") & (df["Zone"] == "Prime")]
+prime_misplaced = df[
+    (df["ABC_Class"] == "A") &
+    (df["Zone"] != "Prime") &
+    (df["Needs_Relocation"])
+]
+
+low_in_prime = df[
+    (df["ABC_Class"] == "C") &
+    (df["Zone"] == "Prime")
+]
 
 
 # =========================================================
@@ -233,15 +255,17 @@ def kpi_card(label, value, color="#00c9a7", sub=None):
         {sub_html}
     </div>"""
 
+
 cols = st.columns(6)
 cards = [
-    ("Total SKUs", str(total_skus), "#e2e8f0", None),
-    ("Misaligned SKUs", str(misaligned), "#f59e0b", None),
-    ("Misalignment %", f"{misalignment_pct}%", "#ef4444", None),
-    ("High-Priority %", f"{priority_pct}%", "#3b82f6", "A-class + high movement"),
-    ("Time Saved", f"{estimated_time_saved} hrs/wk", "#00c9a7", "est. picking gain"),
-    ("Labor Impact", f"${int(estimated_labor):,}/wk", "#a78bfa", "@ $25/hr rate"),
+    ("Total SKUs", str(total_skus), "#e2e8f0", "active finished-goods SKUs"),
+    ("Relocation SKUs", str(misaligned), "#f59e0b", "recommended to move"),
+    ("Relocation %", f"{misalignment_pct}%", "#ef4444", "of analyzed SKUs"),
+    ("A-Class SKUs", str(a_count), "#3b82f6", "highest priority group"),
+    ("B-Class SKUs", str(b_count), "#00c9a7", "medium priority group"),
+    ("C-Class SKUs", str(c_count), "#a78bfa", "lower priority group"),
 ]
+
 for col, (label, value, color, sub) in zip(cols, cards):
     col.markdown(kpi_card(label, value, color, sub), unsafe_allow_html=True)
 
@@ -263,17 +287,20 @@ def banner(icon, label, text, bg, border):
         color:#e2e8f0;
     "><span style="color:{border};font-weight:700;">{icon} {label}</span> {text}</div>"""
 
+
 b1, b2 = st.columns(2)
+
 with b1:
     st.markdown(banner(
         "⚡", "Impact:",
-        f"Identified {misaligned} relocation opportunities prioritizing high-movement A-class SKUs.",
+        f"Identified {misaligned} relocation opportunities across {total_skus} SKUs ({misalignment_pct}%).",
         "#0f2a1a", "#00c9a7"
     ), unsafe_allow_html=True)
+
 with b2:
     st.markdown(banner(
         "🎯", "Key Finding:",
-        "A-class SKUs are not consistently placed in Prime zones — missed picking efficiency.",
+        "A-class SKUs should be prioritized for Prime zones, while lower-priority inventory can be shifted to secondary storage.",
         "#1a1a0f", "#f59e0b"
     ), unsafe_allow_html=True)
 
@@ -294,12 +321,9 @@ Synthetic lane-level view — bin occupancy and ABC class distribution (simulate
 
 
 def generate_synthetic_map(seed=42):
-    """Generate a realistic synthetic warehouse bin map from simulated SKU data."""
     random.seed(seed)
 
-    # Use real df_original SKUs to populate bins more authentically
-    sku_pool = df_original[["SKU_ID", "ABC_Class", "Zone", "Needs_Relocation" if "Needs_Relocation" in df_original.columns else "ABC_Class"]].copy()
-    sku_pool["Needs_Relocation"] = df_original["Current_Location"] != df_original["Optimal_Location"]
+    sku_pool = df_original[["SKU_ID", "ABC_Class", "Zone", "Needs_Relocation"]].copy()
 
     zone_lanes = {
         "Zone 1 Prime": ["HA", "HB", "HC", "HD", "HE", "HF", "HG", "HH", "HI", "HJ", "HK", "HL", "HM"],
@@ -307,12 +331,12 @@ def generate_synthetic_map(seed=42):
         "Zone 3 Cold": ["WI"],
     }
 
-    # Occupancy rates by zone (matching teammate's 10.6% occupied overall)
     zone_occ = {
         "Zone 1 Prime": 0.065,
         "Zone 2 Secondary": 0.17,
         "Zone 3 Cold": 0.02,
     }
+
     zone_blk = {
         "Zone 1 Prime": 0.01,
         "Zone 2 Secondary": 0.06,
@@ -320,26 +344,32 @@ def generate_synthetic_map(seed=42):
     }
 
     rows = []
+
     for zone, lanes in zone_lanes.items():
         occ_rate = zone_occ[zone]
         blk_rate = zone_blk[zone]
+
         for lane in lanes:
             n_bins = 48
+
             for i in range(n_bins):
                 r = random.random()
+
                 if r < blk_rate:
-                    status, abc = "Blocked", ""
-                    sku = ""
+                    status, abc, sku = "Blocked", "", ""
+
                 elif r < blk_rate + occ_rate:
                     status = "Occupied"
-                    # Pick a real SKU from zone-appropriate pool
-                    zone_short = zone.split()[1]  # Prime / Secondary / Cold
+                    zone_short = zone.split()[1]
                     pool = sku_pool[sku_pool["Zone"] == zone_short]
+
                     if pool.empty:
                         pool = sku_pool
+
                     row = pool.sample(1).iloc[0]
                     abc = row["ABC_Class"]
                     sku = row["SKU_ID"]
+
                 else:
                     status, abc, sku = "Available", "", ""
 
@@ -351,6 +381,7 @@ def generate_synthetic_map(seed=42):
                     "ABC_Class": abc,
                     "SKU": sku,
                 })
+
     return pd.DataFrame(rows)
 
 
@@ -364,15 +395,22 @@ def get_bin_color(status, abc):
 
     if status == "Blocked":
         return "#3a1a1a"
+
     if status == "Available":
         return "#12211a"
 
-    color_map = {"A": "#ef4444", "B": "#f59e0b", "C": "#22c55e"}
+    color_map = {
+        "A": "#ef4444",
+        "B": "#f59e0b",
+        "C": "#22c55e"
+    }
+
     return color_map.get(abc, "#1e40af")
 
 
 def render_bin_map(map_df):
     zones = ["Zone 1 Prime", "Zone 2 Secondary", "Zone 3 Cold"]
+
     html = """
     <style>
     body { margin:0; background:#0b0d14; font-family:'IBM Plex Mono',monospace; }
@@ -430,6 +468,7 @@ def render_bin_map(map_df):
     .legend-item { display: flex; align-items: center; gap: 6px; }
     .legend-dot { width: 12px; height: 12px; border-radius: 2px; }
     </style>
+
     <div class="map-wrap">
     <div class="legend">
         <div class="legend-item"><div class="legend-dot" style="background:#ef4444;"></div>A-Class</div>
@@ -442,22 +481,30 @@ def render_bin_map(map_df):
 
     for zone in zones:
         zone_df = map_df[map_df["Zone"] == zone]
+
         if zone_df.empty:
             continue
+
         lanes = zone_df["Lane"].unique()
+
         html += f'<div class="zone-header">{zone}</div>'
         html += '<div class="lanes-row">'
+
         for lane in lanes:
             lane_df = zone_df[zone_df["Lane"] == lane]
             html += f'<div class="lane-block"><div class="lane-label">{lane}</div><div class="bin-grid">'
+
             for _, row in lane_df.iterrows():
                 color = get_bin_color(row["Bin_Status"], row["ABC_Class"])
                 tooltip = f"Loc: {row['Location']} | SKU: {row['SKU']} | ABC: {row['ABC_Class']} | {row['Bin_Status']}"
                 html += f'<div class="bin" style="background:{color};" title="{tooltip}"></div>'
+
             html += "</div></div>"
+
         html += "</div>"
 
     html += "</div>"
+
     return html
 
 
@@ -478,11 +525,13 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 i1, i2, i3 = st.columns(3)
+
 insight_cards = [
     ("A-Class Outside Prime", str(len(prime_misplaced)), "#ef4444", "SKUs to pull into Zone 1"),
-    ("C-Class in Prime", str(len(low_in_prime)), "#f59e0b", "Prime space being wasted"),
+    ("C-Class in Prime", str(len(low_in_prime)), "#f59e0b", "Prime space being used"),
     ("Total Relocation Needed", str(misaligned), "#00c9a7", f"{misalignment_pct}% of filtered SKUs"),
 ]
+
 for col, (label, val, color, sub) in zip([i1, i2, i3], insight_cards):
     col.markdown(kpi_card(label, val, color, sub), unsafe_allow_html=True)
 
@@ -490,7 +539,7 @@ st.markdown("<div style='margin:12px 0;'></div>", unsafe_allow_html=True)
 
 st.markdown(banner(
     "✅", "Recommended Action:",
-    "Move high-movement A-class SKUs into Prime zones and reassign lower-priority inventory to secondary storage.",
+    "Prioritize the 59 relocation candidates first, especially A-class SKUs outside Prime zones, instead of re-slotting the entire warehouse.",
     "#0a1a12", "#00c9a7"
 ), unsafe_allow_html=True)
 
@@ -506,10 +555,23 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-top_moves = df[df["Needs_Relocation"]].sort_values(by="Movements", ascending=False).head(10)
+top_moves = df[df["Needs_Relocation"]].sort_values(
+    by=["ABC_Class", "Movements", "Stock_Qty"],
+    ascending=[True, False, False]
+).head(10)
 
 st.dataframe(
-    top_moves[["SKU_ID", "ABC_Class", "Zone", "Current_Location", "Movements", "Stock_Qty", "Optimal_Location"]],
+    top_moves[[
+        "SKU_ID",
+        "ABC_Class",
+        "Speed_Class",
+        "Zone",
+        "Recommended_Zone",
+        "Current_Location",
+        "Movements",
+        "Stock_Qty",
+        "Optimal_Location"
+    ]],
     use_container_width=True,
     hide_index=True
 )
@@ -525,12 +587,14 @@ st.markdown("""
 ▸ A-Class High-Movement SKUs — Critical Items
 </div>
 """, unsafe_allow_html=True)
+
 st.dataframe(
     priority_df.sort_values(by="Movements", ascending=False),
     use_container_width=True,
     hide_index=True
 )
-st.caption("These SKUs represent the highest operational impact and should be prioritized for relocation.")
+
+st.caption("These SKUs represent the highest operational impact and should be reviewed first for Prime-zone placement.")
 
 st.markdown("<div style='margin:16px 0; border-bottom:1px solid #1e2235;'></div>", unsafe_allow_html=True)
 
@@ -546,10 +610,11 @@ st.markdown("""
 
 before_after = pd.DataFrame({
     "Scenario": ["Current State", "After Optimization"],
-    "Misaligned SKUs": [misaligned, 0],
+    "Relocation Candidates": [misaligned, 0],
     "Picking Time Saved (hrs/week)": [0, estimated_time_saved],
     "Labor Impact ($/week)": [0, int(estimated_labor)],
 })
+
 st.dataframe(before_after, use_container_width=True, hide_index=True)
 
 st.markdown("<div style='margin:16px 0; border-bottom:1px solid #1e2235;'></div>", unsafe_allow_html=True)
@@ -585,37 +650,59 @@ DARK_CHART = {
 c1, c2 = st.columns(2)
 
 with c1:
-    st.markdown("<div style='font-size:13px;font-weight:600;color:#94a3b8;margin-bottom:8px;'>Zone Utilization (Current)</div>", unsafe_allow_html=True)
+    st.markdown("<div style='font-size:13px;font-weight:600;color:#94a3b8;margin-bottom:8px;'>Zone Utilization Current</div>", unsafe_allow_html=True)
+
     zone_counts = df["Zone"].value_counts().reset_index()
     zone_counts.columns = ["Zone", "Count"]
-    zone_color = alt.Color("Zone:N", scale=alt.Scale(
-        domain=["Prime", "Secondary", "Reserve"],
-        range=["#00c9a7", "#3b82f6", "#f59e0b"]
-    ))
+
+    zone_color = alt.Color(
+        "Zone:N",
+        scale=alt.Scale(
+            domain=["Prime", "Secondary", "Reserve"],
+            range=["#00c9a7", "#3b82f6", "#f59e0b"]
+        )
+    )
+
     chart1 = (
         alt.Chart(zone_counts)
         .mark_bar(cornerRadiusTopLeft=4, cornerRadiusTopRight=4)
-        .encode(x=alt.X("Zone:N", axis=alt.Axis(labelAngle=0)), y="Count:Q", color=zone_color)
+        .encode(
+            x=alt.X("Zone:N", axis=alt.Axis(labelAngle=0)),
+            y="Count:Q",
+            color=zone_color
+        )
         .properties(height=220)
         .configure(**DARK_CHART["config"])
     )
+
     st.altair_chart(chart1, use_container_width=True)
 
 with c2:
-    st.markdown("<div style='font-size:13px;font-weight:600;color:#94a3b8;margin-bottom:8px;'>ABC Class Mix (Optimization Opportunity)</div>", unsafe_allow_html=True)
+    st.markdown("<div style='font-size:13px;font-weight:600;color:#94a3b8;margin-bottom:8px;'>ABC Class Mix Optimization Opportunity</div>", unsafe_allow_html=True)
+
     abc_counts = df["ABC_Class"].value_counts().reset_index()
     abc_counts.columns = ["Class", "Count"]
-    abc_color = alt.Color("Class:N", scale=alt.Scale(
-        domain=["A", "B", "C"],
-        range=["#ef4444", "#f59e0b", "#22c55e"]
-    ))
+
+    abc_color = alt.Color(
+        "Class:N",
+        scale=alt.Scale(
+            domain=["A", "B", "C"],
+            range=["#ef4444", "#f59e0b", "#22c55e"]
+        )
+    )
+
     chart2 = (
         alt.Chart(abc_counts)
         .mark_bar(cornerRadiusTopLeft=4, cornerRadiusTopRight=4)
-        .encode(x=alt.X("Class:N", axis=alt.Axis(labelAngle=0)), y="Count:Q", color=abc_color)
+        .encode(
+            x=alt.X("Class:N", axis=alt.Axis(labelAngle=0)),
+            y="Count:Q",
+            color=abc_color
+        )
         .properties(height=220)
         .configure(**DARK_CHART["config"])
     )
+
     st.altair_chart(chart2, use_container_width=True)
 
 
@@ -623,6 +710,7 @@ with c2:
 # FOOTER
 # =========================================================
 st.markdown("<div style='margin:24px 0 8px; border-bottom:1px solid #1e2235;'></div>", unsafe_allow_html=True)
+
 st.markdown("""
 <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#334155;text-align:center;padding:8px 0 16px;">
     Portfolio Project &nbsp;|&nbsp; Warehouse Slotting Optimization &nbsp;|&nbsp; Python · SQL · Streamlit
