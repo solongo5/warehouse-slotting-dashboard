@@ -11,7 +11,7 @@ End-to-end warehouse analytics solution designed to identify SKU misalignment, p
 
 # Dashboard Preview
 
-<img width="1200" alt="Warehouse Dashboard" src="images/dashboard.png">
+<img width="1200" alt="Warehouse Dashboard" src="dashboard.png">
 
 ---
 
