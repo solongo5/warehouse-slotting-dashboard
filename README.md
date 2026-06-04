@@ -251,8 +251,6 @@ warehouse-slotting-dashboard/
 ├── data.csv
 ├── requirements.txt
 ├── README.md
-│
-└── dashboard.png
 ```
 
 ---
