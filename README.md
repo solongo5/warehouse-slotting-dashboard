@@ -8,6 +8,10 @@ This project is an interactive warehouse slotting optimization tool built with A
 
 The project is based on a real warehouse optimization use case. All data has been anonymized and simulated for confidentiality.
 
+## Why I Built This
+With 9+ years of experience in supply chain and procurement, I've seen how warehouse layouts and inventory placement decisions can directly impact operational efficiency. I built this project to combine my warehouse operations background with analytics and demonstrate how inventory segmentation and movement data can be used to identify practical relocation opportunities and improve warehouse performance.
+
+
 ## The Problem
 
 In many warehouses, inventory locations evolve over time as products are added, moved, and replenished. As a result, high-volume SKUs are not always stored in the most efficient picking locations, while lower-priority items may occupy valuable space near shipping and picking areas.
