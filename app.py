@@ -175,7 +175,7 @@ st.sidebar.markdown("""
   </tr>
   <tr><td style="color:#e2e8f0;">Z1 Prime</td><td align="right" style="color:#52c41a;">885</td><td align="right" style="color:#f59e0b;">83</td><td align="right" style="color:#ef4444;">13</td><td align="right">981</td></tr>
   <tr><td style="color:#e2e8f0;">Z2 Secondary</td><td align="right" style="color:#52c41a;">715</td><td align="right" style="color:#f59e0b;">198</td><td align="right" style="color:#ef4444;">70</td><td align="right">983</td></tr>
-  <tr><td style="color:#e2e8f0;">Z3 Cold</td><td align="right" style="color:#52c41a;">61</td><td align="right" style="color:#f59e0b;">0</td><td align="right" style="color:#ef4444;">0</td><td align="right">61</td></tr>
+  <tr><td style="color:#e2e8f0;">Z3 Reserve</td><td align="right" style="color:#52c41a;">61</td><td align="right" style="color:#f59e0b;">0</td><td align="right" style="color:#ef4444;">0</td><td align="right">61</td></tr>
   <tr><td style="color:#e2e8f0;">DR Flex</td><td align="right" style="color:#52c41a;">0</td><td align="right" style="color:#f59e0b;">0</td><td align="right" style="color:#ef4444;">0</td><td align="right">0</td></tr>
 </table>
 """, unsafe_allow_html=True)
@@ -368,19 +368,19 @@ def generate_synthetic_map(seed=42):
     zone_lanes = {
         "Zone 1 Prime": ["HA", "HB", "HC", "HD", "HE", "HF", "HG", "HH", "HI", "HJ", "HK", "HL", "HM"],
         "Zone 2 Secondary": ["RG", "RF", "RE", "RD", "RC", "RB", "RA", "RH"],
-        "Zone 3 Cold": ["WI"],
+        "Zone 3 Reserve": ["WI"],
     }
 
     zone_occ = {
         "Zone 1 Prime": 0.065,
         "Zone 2 Secondary": 0.17,
-        "Zone 3 Cold": 0.02,
+        "Zone 3 Reserve": 0.02,
     }
 
     zone_blk = {
         "Zone 1 Prime": 0.01,
         "Zone 2 Secondary": 0.06,
-        "Zone 3 Cold": 0.0,
+        "Zone 3 Reserve": 0.0,
     }
 
     rows = []
@@ -449,7 +449,7 @@ def get_bin_color(status, abc):
 
 
 def render_bin_map(map_df):
-    zones = ["Zone 1 Prime", "Zone 2 Secondary", "Zone 3 Cold"]
+    zones = ["Zone 1 Prime", "Zone 2 Secondary", "Zone 3 Reserve"]
 
     html = """
     <style>
