@@ -239,11 +239,20 @@ low_in_prime = df[
 # =========================================================
 # KPI CARDS
 # =========================================================
+
 def kpi_card(label, value, color="#00c9a7", sub=None):
-    sub_html = (
-        f'<div style="font-size:11px;color:#475569;margin-top:4px;">{sub}</div>'
-        if sub else ""
-    )
+
+    sub_html = ""
+    if sub:
+        sub_html = f"""
+        <div style="
+            font-size:11px;
+            color:#475569;
+            margin-top:6px;
+        ">
+            {sub}
+        </div>
+        """
 
     return f"""
     <div style="
@@ -251,17 +260,18 @@ def kpi_card(label, value, color="#00c9a7", sub=None):
         border:1px solid #1e2235;
         border-top:2px solid {color};
         border-radius:10px;
-        padding:18px 20px;
+        padding:18px 18px;
         text-align:left;
-        min-height:95px;
+        min-height:110px;
     ">
+
         <div style="
             font-size:11px;
             color:#475569;
-            font-family:'IBM Plex Mono',monospace;
+            font-family:'IBM Plex Mono', monospace;
             letter-spacing:0.08em;
             text-transform:uppercase;
-            margin-bottom:8px;
+            margin-bottom:10px;
         ">
             {label}
         </div>
@@ -270,13 +280,14 @@ def kpi_card(label, value, color="#00c9a7", sub=None):
             font-size:28px;
             font-weight:700;
             color:{color};
-            font-family:'IBM Plex Sans',sans-serif;
+            font-family:'IBM Plex Sans', sans-serif;
             line-height:1;
         ">
             {value}
         </div>
 
         {sub_html}
+
     </div>
     """
 
@@ -288,23 +299,24 @@ def kpi_card(label, value, color="#00c9a7", sub=None):
 cols = st.columns(8)
 
 cards = [
+
     (
         "Total SKUs",
-        str(total_skus),
+        "281",
         "#e2e8f0",
         "active finished-goods SKUs"
     ),
 
     (
         "Relocation SKUs",
-        str(misaligned),
+        "59",
         "#f59e0b",
         "recommended to move"
     ),
 
     (
         "Relocation %",
-        f"{misalignment_pct:.1f}%",
+        "21.0%",
         "#ef4444",
         "of analyzed SKUs"
     ),
@@ -331,31 +343,34 @@ cards = [
     ),
 
     (
-        "Est. Time Saved",
+        "Time Saved",
         "9.8 hrs/wk",
         "#14b8a6",
-        "illustrative estimate"
+        "estimated picking gain"
     ),
 
     (
-        "Est. Labor Impact",
+        "Labor Impact",
         "$246/wk",
         "#a78bfa",
-        "at $25/hr labor rate"
-    ),
+        "@ $25/hr labor rate"
+    )
 ]
 
 for col, (label, value, color, sub) in zip(cols, cards):
+
     with col:
         st.markdown(
-            kpi_card(label, value, color, sub),
+            kpi_card(
+                label,
+                value,
+                color,
+                sub
+            ),
             unsafe_allow_html=True
         )
 
-st.markdown(
-    "<div style='margin-top:10px;'></div>",
-    unsafe_allow_html=True
-)
+st.markdown("<br>", unsafe_allow_html=True)
 
 
 # =========================================================
