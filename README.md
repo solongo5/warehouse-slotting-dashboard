@@ -4,7 +4,7 @@
 
 💻 GitHub: https://github.com/solongo5/warehouse-slotting-dashboard
 
-This project is an interactive warehouse slotting optimization tool built with Azure SQL, Python, and Streamlit. The goal was to identify inventory-location misalignment, prioritize relocation opportunities, and help warehouse teams make better slotting decisions using data.
+This project is an interactive warehouse slotting optimization tool built with Azure SQL, Python, and Streamlit. The tool identifies inventory-location misalignment, prioritizes relocation opportunities, and helps warehouse team make more informed slotting decisions.
 
 The project is based on a real warehouse optimization use case. All data has been anonymized and simulated for confidentiality.
 
