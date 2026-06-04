@@ -228,70 +228,88 @@ low_in_prime = df[
 ]
 
 
+def kpi_card(label, value, color="#00c9a7", sub=None):
+    sub_html = f'<div style="font-size:11px;color:#475569;margin-top:4px;">{sub}</div>' if sub else ""
+    return f"""
+    <div style="
+        background: #111420;
+        border: 1px solid #1e2235;
+        border-top: 2px solid {color};
+        border-radius: 10px;
+        padding: 18px 20px;
+        text-align: left;
+    ">
+        <div style="font-size:11px;color:#475569;font-family:'IBM Plex Mono',monospace;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;">{label}</div>
+        <div style="font-size:28px;font-weight:700;color:{color};font-family:'IBM Plex Sans',sans-serif;line-height:1;">{value}</div>
+        {sub_html}
+    </div>
+    """
 
 # =========================================================
 # EXECUTIVE KPI ROW
 # =========================================================
 
-cols = st.columns(8)
+cards = [
+    ("Total SKUs", f"{total_skus:,}", "#e2e8f0", "active FG SKUs"),
+    ("Relocation SKUs", f"{misaligned:,}", "#f59e0b", "recommended to move"),
+    ("Relocation %", f"{misalignment_pct:.1f}%", "#ef4444", "of analyzed SKUs"),
+    ("Storage Bins", "5,617", "#ec4899", "facility locations"),
+    ("SAP Records", "423K", "#3b82f6", "movement records"),
+    ("Facility Size", "224K", "#00c9a7", "sq ft"),
+    ("Time Saved", f"{estimated_time_saved:.1f} hrs/wk", "#14b8a6", "estimated gain"),
+    ("Labor Impact", f"${int(estimated_labor):,}/wk", "#a78bfa", "@ $25/hr"),
+]
 
-with cols[0]:
-    st.metric(
-        label="Total SKUs",
-        value=f"{total_skus:,}",
-        delta="active FG SKUs"
-    )
+card_html = """
+<style>
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 14px;
+}
+.kpi-card {
+    background: #111420;
+    border: 1px solid #1e2235;
+    border-radius: 10px;
+    padding: 18px 18px;
+    min-height: 105px;
+}
+.kpi-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #64748b;
+    margin-bottom: 10px;
+}
+.kpi-value {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1;
+}
+.kpi-sub {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 7px;
+}
+</style>
 
-with cols[1]:
-    st.metric(
-        label="Relocation SKUs",
-        value=f"{misaligned:,}",
-        delta="recommended to move"
-    )
+<div class="kpi-grid">
+"""
 
-with cols[2]:
-    st.metric(
-        label="Relocation %",
-        value=f"{misalignment_pct:.1f}%",
-        delta="of analyzed SKUs"
-    )
+for label, value, color, sub in cards:
+    card_html += f"""
+    <div class="kpi-card" style="border-top:2px solid {color};">
+        <div class="kpi-label">{label}</div>
+        <div class="kpi-value" style="color:{color};">{value}</div>
+        <div class="kpi-sub">{sub}</div>
+    </div>
+    """
 
-with cols[3]:
-    st.metric(
-        label="Storage Bins",
-        value="5,617",
-        delta="facility locations"
-    )
+card_html += "</div>"
 
-with cols[4]:
-    st.metric(
-        label="SAP Records",
-        value="423K",
-        delta="movement records"
-    )
-
-with cols[5]:
-    st.metric(
-        label="Facility Size",
-        value="224K",
-        delta="sq ft"
-    )
-
-with cols[6]:
-    st.metric(
-        label="Time Saved",
-        value=f"{estimated_time_saved:.1f} hrs/wk",
-        delta="estimated gain"
-    )
-
-with cols[7]:
-    st.metric(
-        label="Labor Impact",
-        value=f"${int(estimated_labor):,}/wk",
-        delta="@ $25/hr"
-    )
-
-st.markdown("<br>", unsafe_allow_html=True)
+components.html(card_html, height=145, scrolling=False)
 
 
 # =========================================================
