@@ -285,65 +285,32 @@ def kpi_card(label, value, color="#00c9a7", sub=None):
 # =========================================================
 # EXECUTIVE KPI ROW
 # =========================================================
+
 cols = st.columns(8)
 
-cards = [
-    (
-        "Total SKUs",
-        str(total_skus),
-        "#e2e8f0",
-        "active finished-goods SKUs"
-    ),
-    (
-        "Relocation SKUs",
-        str(misaligned),
-        "#f59e0b",
-        "recommended to move"
-    ),
-    (
-        "Relocation %",
-        f"{misalignment_pct:.1f}%",
-        "#ef4444",
-        "of analyzed SKUs"
-    ),
-    (
-        "Storage Bins",
-        "5,617",
-        "#ec4899",
-        "facility storage locations"
-    ),
-    (
-        "SAP Records",
-        "423K",
-        "#3b82f6",
-        "movement transactions analyzed"
-    ),
-    (
-        "Facility Size",
-        "224K",
-        "#00c9a7",
-        "square feet"
-    ),
-    (
-        "Time Saved",
-        f"{estimated_time_saved:.1f} hrs/wk",
-        "#14b8a6",
-        "estimated picking gain"
-    ),
-    (
-        "Labor Impact",
-        f"${int(estimated_labor):,}/wk",
-        "#a78bfa",
-        "@ $25/hr labor rate"
-    )
-]
+with cols[0]:
+    st.metric("Total SKUs", f"{total_skus:,}", "active FG SKUs")
 
-for col, (label, value, color, sub) in zip(cols, cards):
-    with col:
-        st.markdown(
-            kpi_card(label, value, color, sub),
-            unsafe_allow_html=True
-        )
+with cols[1]:
+    st.metric("Relocation SKUs", f"{misaligned:,}", "recommended to move")
+
+with cols[2]:
+    st.metric("Relocation %", f"{misalignment_pct:.1f}%", "of analyzed SKUs")
+
+with cols[3]:
+    st.metric("Storage Bins", "5,617", "facility locations")
+
+with cols[4]:
+    st.metric("SAP Records", "423K", "movement records")
+
+with cols[5]:
+    st.metric("Facility Size", "224K", "sq ft")
+
+with cols[6]:
+    st.metric("Time Saved", f"{estimated_time_saved:.1f} hrs/wk", "estimated")
+
+with cols[7]:
+    st.metric("Labor Impact", f"${int(estimated_labor):,}/wk", "@ $25/hr")
 
 st.markdown("<br>", unsafe_allow_html=True)
 
