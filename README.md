@@ -118,14 +118,12 @@ This allows warehouse space to be aligned with operational demand.
 
 # Key Results
 
-* 528 total SKUs analyzed
-* 160 comparable finished-goods SKUs evaluated
-* 108 relocation candidates identified
-* 20.5% relocation rate across inventory
-* 67.5% of analyzed SKUs found outside recommended zones
-* 20 high-priority A/Fast SKUs identified outside Prime locations
-* 29 lower-priority SKUs occupying Prime warehouse space
-
+- Identified warehouse slotting misalignment opportunities
+- Prioritized relocation actions using ABC and velocity classifications
+- Developed zone recommendation logic based on operational demand
+- Built an interactive dashboard for warehouse decision support
+- Visualized warehouse occupancy and inventory distribution
+  
 ---
 
 # Dashboard Features
