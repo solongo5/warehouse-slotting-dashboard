@@ -12,7 +12,7 @@ Interactive warehouse slotting optimization dashboard built with SQL, Python, an
 
 # Dashboard Preview
 
-<img width="1200" alt="Warehouse Dashboard" src="images/dashboard.png">
+<img width="1200" alt="Warehouse Dashboard" src="dashboard.png">
 
 ---
 
