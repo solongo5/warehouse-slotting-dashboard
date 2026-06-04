@@ -1,255 +1,632 @@
+import random
 import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as components
 import altair as alt
 
 st.set_page_config(
-    page_title="Warehouse Slotting Optimization Tool",
-    layout="wide"
+    page_title="KDP Warehouse Slotting Dashboard",
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
-# --- Styling ---
+# =========================================================
+# THEME & GLOBAL CSS
+# =========================================================
 st.markdown("""
 <style>
-[data-testid="stAppViewContainer"] {
-    background-color: #f3f4f6;
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600;700&display=swap');
+
+html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"] {
+    background-color: #0b0d14 !important;
+    color: #e2e8f0 !important;
+    font-family: 'IBM Plex Sans', sans-serif !important;
 }
 
+[data-testid="stSidebar"] {
+    background-color: #111420 !important;
+    border-right: 1px solid #1e2235 !important;
+}
+
+[data-testid="stSidebar"] * {
+    color: #cbd5e1 !important;
+}
+
+/* Remove default streamlit padding */
 .main .block-container {
-    padding-top: 2rem;
-    padding-bottom: 2rem;
+    padding-top: 0rem !important;
+    padding-left: 2rem !important;
+    padding-right: 2rem !important;
+    max-width: 100% !important;
 }
 
+/* Hide default title styles */
 h1, h2, h3 {
-    color: #111827;
+    font-family: 'IBM Plex Sans', sans-serif !important;
+    color: #f1f5f9 !important;
 }
 
-div[data-testid="stMetric"] {
-    background-color: white;
-    padding: 16px;
-    border-radius: 12px;
-    border: 1px solid #e5e7eb;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+/* Dataframe dark styling */
+[data-testid="stDataFrame"] {
+    background: #111420 !important;
 }
 
-.insight-box {
-    background-color: #e0f2fe;
-    padding: 16px;
-    border-radius: 10px;
-    border-left: 5px solid #0284c7;
-    margin-top: 10px;
-    margin-bottom: 10px;
+/* Metric overrides */
+[data-testid="stMetric"] {
+    background: transparent !important;
 }
 
-.summary-box {
-    background-color: #e8f5e9;
-    padding: 16px;
-    border-radius: 10px;
-    border-left: 5px solid #16a34a;
-    margin-top: 10px;
-    margin-bottom: 10px;
+/* Selectbox and multiselect */
+[data-testid="stSelectbox"] > div,
+[data-baseweb="select"] {
+    background-color: #1a1f2e !important;
+    border-color: #2d3450 !important;
+    color: #e2e8f0 !important;
 }
 
-.impact-box {
-    background-color: #fff7ed;
-    padding: 16px;
-    border-radius: 10px;
-    border-left: 5px solid #f59e0b;
-    margin-top: 10px;
-    margin-bottom: 10px;
+div[data-baseweb="popover"] {
+    background-color: #1a1f2e !important;
 }
 
-.small-note {
-    color: #6b7280;
-    font-size: 0.9rem;
+/* Slider track */
+[data-testid="stSlider"] > div > div > div > div {
+    background: #00c9a7 !important;
+}
+
+/* Divider */
+hr {
+    border-color: #1e2235 !important;
+}
+
+/* Caption */
+[data-testid="stCaptionContainer"] p {
+    color: #64748b !important;
+}
+
+/* Download button */
+[data-testid="stDownloadButton"] button {
+    background: #1a1f2e !important;
+    border: 1px solid #2d3450 !important;
+    color: #94a3b8 !important;
 }
 </style>
 """, unsafe_allow_html=True)
 
-# --- Load data ---
+
+# =========================================================
+# HEADER BAR
+# =========================================================
+st.markdown("""
+<div style="
+    background: linear-gradient(90deg, #0f1523 0%, #141929 100%);
+    border-bottom: 1px solid #1e2d4a;
+    padding: 14px 24px;
+    margin: -1rem -2rem 1.5rem -2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+">
+    <div>
+        <span style="
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 13px;
+            font-weight: 600;
+            color: #00c9a7;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        ">KEURIG DR PEPPER</span>
+        <span style="color: #334155; margin: 0 10px;">|</span>
+        <span style="
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 13px;
+            color: #94a3b8;
+            letter-spacing: 0.05em;
+        ">SUMNER DC — WAREHOUSE RE-SLOTTING DASHBOARD</span>
+        <span style="color: #334155; margin: 0 10px;">|</span>
+        <span style="
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 12px;
+            color: #475569;
+        ">MSBA TEAM 3 · PUBLIC DEMO</span>
+    </div>
+    <div style="
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 11px;
+        color: #475569;
+    ">Last Refresh: Q1 2026 &nbsp;|&nbsp; Simulated Data</div>
+</div>
+""", unsafe_allow_html=True)
+
+
+# =========================================================
+# LOAD DATA
+# =========================================================
 df_original = pd.read_csv("data.csv")
 
-# --- Filters ---
-st.subheader("Filters")
-col1, col2 = st.columns(2)
 
-with col1:
-    selected_class = st.selectbox("ABC Class", ["All", "A", "B", "C"])
+# =========================================================
+# SIDEBAR FILTERS
+# =========================================================
+st.sidebar.markdown("""
+<div style="
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: #00c9a7;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #1e2235;
+">⚙ Dashboard Controls</div>
+""", unsafe_allow_html=True)
 
-with col2:
-    min_movements = st.slider("Minimum Movements", 0, int(df_original["Movements"].max()), 0)
+selected_class = st.sidebar.selectbox("ABC Class", ["All", "A", "B", "C"])
+min_movements = st.sidebar.slider("Minimum Movements", 0, int(df_original["Movements"].max()), 0)
 
+st.sidebar.markdown("---")
+
+# Zone Breakdown static panel (mirrors teammate's sidebar stats)
+st.sidebar.markdown("""
+<div style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#00c9a7; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:10px;">Zone Breakdown</div>
+<table style="width:100%; font-size:12px; border-collapse:collapse; color:#94a3b8;">
+  <tr style="color:#475569; font-size:11px;">
+    <td>LOCATION</td><td align="right">FREE</td><td align="right">OCC</td><td align="right">BLK</td><td align="right">TOT</td>
+  </tr>
+  <tr><td style="color:#e2e8f0;">Z1 Prime</td><td align="right" style="color:#52c41a;">885</td><td align="right" style="color:#f59e0b;">83</td><td align="right" style="color:#ef4444;">13</td><td align="right">981</td></tr>
+  <tr><td style="color:#e2e8f0;">Z2 Secondary</td><td align="right" style="color:#52c41a;">715</td><td align="right" style="color:#f59e0b;">198</td><td align="right" style="color:#ef4444;">70</td><td align="right">983</td></tr>
+  <tr><td style="color:#e2e8f0;">Z3 Cold</td><td align="right" style="color:#52c41a;">61</td><td align="right" style="color:#f59e0b;">0</td><td align="right" style="color:#ef4444;">0</td><td align="right">61</td></tr>
+  <tr><td style="color:#e2e8f0;">DR Flex</td><td align="right" style="color:#52c41a;">0</td><td align="right" style="color:#f59e0b;">0</td><td align="right" style="color:#ef4444;">0</td><td align="right">0</td></tr>
+</table>
+""", unsafe_allow_html=True)
+
+st.sidebar.markdown("---")
+st.sidebar.markdown(f"""
+<div style="font-size:11px; color:#475569; font-family:'IBM Plex Mono',monospace;">
+ABC: {selected_class} &nbsp;|&nbsp; Min Moves: {min_movements}
+</div>
+""", unsafe_allow_html=True)
+
+
+# =========================================================
+# FILTER DATA
+# =========================================================
 df = df_original.copy()
-
 if selected_class != "All":
     df = df[df["ABC_Class"] == selected_class]
-
 df = df[df["Movements"] >= min_movements].copy()
 
-st.caption(f"Current filter: ABC Class = {selected_class} | Minimum Movements = {min_movements}")
-
-# --- Core Logic ---
 df["Needs_Relocation"] = df["Current_Location"] != df["Optimal_Location"]
-
 df["Time_Saved_Min"] = df["Needs_Relocation"].apply(lambda x: 10 if x else 0)
 df["Labor_Impact"] = df["Time_Saved_Min"] * (25 / 60)
 
-# KPIs
 total_skus = len(df)
 misaligned = int(df["Needs_Relocation"].sum())
-misalignment_pct = round((misaligned / total_skus) * 100, 1)
-
+misalignment_pct = round((misaligned / total_skus) * 100, 1) if total_skus else 0
 estimated_time_saved = round(df["Time_Saved_Min"].sum() / 60, 1)
 estimated_labor = round(df["Labor_Impact"].sum(), 0)
 
 priority_df = df_original[
     (df_original["ABC_Class"] == "A") & (df_original["Movements"] > 100)
 ]
-
 priority_pct = round((len(priority_df) / len(df_original)) * 100, 1)
 
-# --- Title ---
-st.title("Warehouse Slotting Optimization Tool")
-
-st.caption("Analyze SKU placement to identify misalignment and prioritize relocation.")
-
-# ---------- KPIs ----------
-k1, k2, k3, k4, k5, k6 = st.columns(6)
-
-k1.metric("Total SKUs", total_skus)
-k2.metric("Misaligned SKUs", misaligned)
-k3.metric("Misalignment %", f"{misalignment_pct}%")
-k4.metric("High-Priority Segment %", f"{priority_pct}%")
-k5.metric("Est. Picking Time Saved", f"{estimated_time_saved} hrs/week")
-k6.metric("Est. Labor Impact", f"${estimated_labor:,.0f}")
-
-st.caption("""
-Estimate based on 10 minutes weekly time savings per SKU and $25/hour labor rate.
-""")
-
-# --- Impact ---
-st.markdown(f"""
-<div class="impact-box">
-<b>Impact:</b> Identified {misaligned} relocation opportunities across the analyzed SKU set,
-prioritizing high-movement A-class items to improve picking efficiency and optimize Prime zone utilization.
-</div>
-""", unsafe_allow_html=True)
-
-st.markdown("""
-<div class="impact-box">
-<b>Key takeaway:</b> Several high-movement A-class SKUs are outside Prime zones.
-</div>
-""", unsafe_allow_html=True)
-
-st.markdown(f"""
-**Business Impact:** Potential to reduce pick effort by ~{estimated_time_saved} hours/week
-through targeted relocation of misaligned high-demand SKUs.
-""")
-
-# --- Insights ---
-st.subheader("Key Optimization Insights")
-
-prime_misplaced = df[(df["ABC_Class"] == "A") & (df["Zone"] != "Prime") & (df["Needs_Relocation"])]
+prime_misplaced = df[(df["ABC_Class"] == "A") & (df["Zone"] != "Prime") & df["Needs_Relocation"]]
 low_in_prime = df[(df["ABC_Class"] == "C") & (df["Zone"] == "Prime")]
 
-st.write(f"""
-- {len(prime_misplaced)} high-priority (A-class) SKUs outside Prime zones → relocation opportunity  
-- {len(low_in_prime)} low-priority (C-class) SKUs occupy Prime space → inefficient utilization  
-- {misaligned} SKUs ({misalignment_pct}%) require relocation
-""")
 
-st.markdown(f"""
-<div class="summary-box">
-<b>{misaligned} SKUs ({misalignment_pct}%)</b> require relocation based on slotting mismatch.
-</div>
-""", unsafe_allow_html=True)
+# =========================================================
+# KPI CARDS
+# =========================================================
+def kpi_card(label, value, color="#00c9a7", sub=None):
+    sub_html = f'<div style="font-size:11px;color:#475569;margin-top:4px;">{sub}</div>' if sub else ""
+    return f"""
+    <div style="
+        background: #111420;
+        border: 1px solid #1e2235;
+        border-top: 2px solid {color};
+        border-radius: 10px;
+        padding: 18px 20px;
+        text-align: left;
+    ">
+        <div style="font-size:11px;color:#475569;font-family:'IBM Plex Mono',monospace;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;">{label}</div>
+        <div style="font-size:28px;font-weight:700;color:{color};font-family:'IBM Plex Sans',sans-serif;line-height:1;">{value}</div>
+        {sub_html}
+    </div>"""
 
+cols = st.columns(6)
+cards = [
+    ("Total SKUs", str(total_skus), "#e2e8f0", None),
+    ("Misaligned SKUs", str(misaligned), "#f59e0b", None),
+    ("Misalignment %", f"{misalignment_pct}%", "#ef4444", None),
+    ("High-Priority %", f"{priority_pct}%", "#3b82f6", "A-class + high movement"),
+    ("Time Saved", f"{estimated_time_saved} hrs/wk", "#00c9a7", "est. picking gain"),
+    ("Labor Impact", f"${int(estimated_labor):,}/wk", "#a78bfa", "@ $25/hr rate"),
+]
+for col, (label, value, color, sub) in zip(cols, cards):
+    col.markdown(kpi_card(label, value, color, sub), unsafe_allow_html=True)
+
+st.markdown("<div style='margin-top:8px;'></div>", unsafe_allow_html=True)
+
+
+# =========================================================
+# INSIGHT BANNERS
+# =========================================================
+def banner(icon, label, text, bg, border):
+    return f"""
+    <div style="
+        background:{bg};
+        border-left:4px solid {border};
+        border-radius:8px;
+        padding:14px 18px;
+        margin:6px 0;
+        font-size:14px;
+        color:#e2e8f0;
+    "><span style="color:{border};font-weight:700;">{icon} {label}</span> {text}</div>"""
+
+b1, b2 = st.columns(2)
+with b1:
+    st.markdown(banner(
+        "⚡", "Impact:",
+        f"Identified {misaligned} relocation opportunities prioritizing high-movement A-class SKUs.",
+        "#0f2a1a", "#00c9a7"
+    ), unsafe_allow_html=True)
+with b2:
+    st.markdown(banner(
+        "🎯", "Key Finding:",
+        "A-class SKUs are not consistently placed in Prime zones — missed picking efficiency.",
+        "#1a1a0f", "#f59e0b"
+    ), unsafe_allow_html=True)
+
+st.markdown("<div style='margin:12px 0; border-bottom:1px solid #1e2235;'></div>", unsafe_allow_html=True)
+
+
+# =========================================================
+# WAREHOUSE BIN MAP
+# =========================================================
 st.markdown("""
-<div class="insight-box">
-<b>Recommended Action:</b> Move high-movement A-class SKUs into Prime zones and reassign
-lower-priority inventory to secondary storage.
+<div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#00c9a7;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;">
+▦ Recommended Warehouse Bin Map
+</div>
+<div style="font-size:13px;color:#475569;margin-bottom:12px;">
+Synthetic lane-level view — bin occupancy and ABC class distribution (simulated from operational logic)
 </div>
 """, unsafe_allow_html=True)
 
-st.markdown("---")
 
-# --- Top Moves ---
-st.subheader("Top 10 Priority Moves (Highest Impact)")
+def generate_synthetic_map(seed=42):
+    """Generate a realistic synthetic warehouse bin map from simulated SKU data."""
+    random.seed(seed)
+
+    # Use real df_original SKUs to populate bins more authentically
+    sku_pool = df_original[["SKU_ID", "ABC_Class", "Zone", "Needs_Relocation" if "Needs_Relocation" in df_original.columns else "ABC_Class"]].copy()
+    sku_pool["Needs_Relocation"] = df_original["Current_Location"] != df_original["Optimal_Location"]
+
+    zone_lanes = {
+        "Zone 1 Prime": ["HA", "HB", "HC", "HD", "HE", "HF", "HG", "HH", "HI", "HJ", "HK", "HL", "HM"],
+        "Zone 2 Secondary": ["RG", "RF", "RE", "RD", "RC", "RB", "RA", "RH"],
+        "Zone 3 Cold": ["WI"],
+    }
+
+    # Occupancy rates by zone (matching teammate's 10.6% occupied overall)
+    zone_occ = {
+        "Zone 1 Prime": 0.065,
+        "Zone 2 Secondary": 0.17,
+        "Zone 3 Cold": 0.02,
+    }
+    zone_blk = {
+        "Zone 1 Prime": 0.01,
+        "Zone 2 Secondary": 0.06,
+        "Zone 3 Cold": 0.0,
+    }
+
+    rows = []
+    for zone, lanes in zone_lanes.items():
+        occ_rate = zone_occ[zone]
+        blk_rate = zone_blk[zone]
+        for lane in lanes:
+            n_bins = 48
+            for i in range(n_bins):
+                r = random.random()
+                if r < blk_rate:
+                    status, abc = "Blocked", ""
+                    sku = ""
+                elif r < blk_rate + occ_rate:
+                    status = "Occupied"
+                    # Pick a real SKU from zone-appropriate pool
+                    zone_short = zone.split()[1]  # Prime / Secondary / Cold
+                    pool = sku_pool[sku_pool["Zone"] == zone_short]
+                    if pool.empty:
+                        pool = sku_pool
+                    row = pool.sample(1).iloc[0]
+                    abc = row["ABC_Class"]
+                    sku = row["SKU_ID"]
+                else:
+                    status, abc, sku = "Available", "", ""
+
+                rows.append({
+                    "Location": f"{lane}-{i+1:03d}",
+                    "Lane": lane,
+                    "Zone": zone,
+                    "Bin_Status": status,
+                    "ABC_Class": abc,
+                    "SKU": sku,
+                })
+    return pd.DataFrame(rows)
+
+
+def get_bin_color(status, abc):
+    status = str(status)
+
+    if isinstance(abc, pd.Series):
+        abc = abc.iloc[0] if len(abc) > 0 else ""
+
+    abc = str(abc).strip().upper()
+
+    if status == "Blocked":
+        return "#3a1a1a"
+    if status == "Available":
+        return "#12211a"
+
+    color_map = {"A": "#ef4444", "B": "#f59e0b", "C": "#22c55e"}
+    return color_map.get(abc, "#1e40af")
+
+
+def render_bin_map(map_df):
+    zones = ["Zone 1 Prime", "Zone 2 Secondary", "Zone 3 Cold"]
+    html = """
+    <style>
+    body { margin:0; background:#0b0d14; font-family:'IBM Plex Mono',monospace; }
+    .map-wrap { padding: 0; }
+    .zone-header {
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #00c9a7;
+        margin: 20px 0 10px 0;
+        padding-bottom: 6px;
+        border-bottom: 1px solid #1e2235;
+    }
+    .lanes-row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 8px;
+    }
+    .lane-block {
+        background: #111420;
+        border: 1px solid #1e2235;
+        border-radius: 8px;
+        padding: 10px 10px 8px;
+        min-width: 110px;
+    }
+    .lane-label {
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        color: #64748b;
+        margin-bottom: 7px;
+        text-align: center;
+    }
+    .bin-grid {
+        display: grid;
+        grid-template-columns: repeat(6, 14px);
+        gap: 3px;
+    }
+    .bin {
+        width: 14px;
+        height: 14px;
+        border-radius: 2px;
+    }
+    .legend {
+        display: flex;
+        gap: 18px;
+        flex-wrap: wrap;
+        margin-bottom: 14px;
+        font-size: 11px;
+        color: #64748b;
+        letter-spacing: 0.05em;
+    }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .legend-dot { width: 12px; height: 12px; border-radius: 2px; }
+    </style>
+    <div class="map-wrap">
+    <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#ef4444;"></div>A-Class</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#f59e0b;"></div>B-Class</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#22c55e;"></div>C-Class</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#12211a;border:1px solid #1e3a2a;"></div>Available</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#3a1a1a;border:1px solid #5a2222;"></div>Blocked</div>
+    </div>
+    """
+
+    for zone in zones:
+        zone_df = map_df[map_df["Zone"] == zone]
+        if zone_df.empty:
+            continue
+        lanes = zone_df["Lane"].unique()
+        html += f'<div class="zone-header">{zone}</div>'
+        html += '<div class="lanes-row">'
+        for lane in lanes:
+            lane_df = zone_df[zone_df["Lane"] == lane]
+            html += f'<div class="lane-block"><div class="lane-label">{lane}</div><div class="bin-grid">'
+            for _, row in lane_df.iterrows():
+                color = get_bin_color(row["Bin_Status"], row["ABC_Class"])
+                tooltip = f"Loc: {row['Location']} | SKU: {row['SKU']} | ABC: {row['ABC_Class']} | {row['Bin_Status']}"
+                html += f'<div class="bin" style="background:{color};" title="{tooltip}"></div>'
+            html += "</div></div>"
+        html += "</div>"
+
+    html += "</div>"
+    return html
+
+
+map_df = generate_synthetic_map()
+bin_map_html = render_bin_map(map_df)
+components.html(bin_map_html, height=680, scrolling=True)
+
+st.markdown("<div style='margin:16px 0; border-bottom:1px solid #1e2235;'></div>", unsafe_allow_html=True)
+
+
+# =========================================================
+# KEY INSIGHTS
+# =========================================================
+st.markdown("""
+<div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#00c9a7;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;">
+▸ Key Optimization Insights
+</div>
+""", unsafe_allow_html=True)
+
+i1, i2, i3 = st.columns(3)
+insight_cards = [
+    ("A-Class Outside Prime", str(len(prime_misplaced)), "#ef4444", "SKUs to pull into Zone 1"),
+    ("C-Class in Prime", str(len(low_in_prime)), "#f59e0b", "Prime space being wasted"),
+    ("Total Relocation Needed", str(misaligned), "#00c9a7", f"{misalignment_pct}% of filtered SKUs"),
+]
+for col, (label, val, color, sub) in zip([i1, i2, i3], insight_cards):
+    col.markdown(kpi_card(label, val, color, sub), unsafe_allow_html=True)
+
+st.markdown("<div style='margin:12px 0;'></div>", unsafe_allow_html=True)
+
+st.markdown(banner(
+    "✅", "Recommended Action:",
+    "Move high-movement A-class SKUs into Prime zones and reassign lower-priority inventory to secondary storage.",
+    "#0a1a12", "#00c9a7"
+), unsafe_allow_html=True)
+
+st.markdown("<div style='margin:16px 0; border-bottom:1px solid #1e2235;'></div>", unsafe_allow_html=True)
+
+
+# =========================================================
+# TOP 10 PRIORITY MOVES
+# =========================================================
+st.markdown("""
+<div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#00c9a7;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;">
+▸ Top 10 Priority Moves — Highest Impact
+</div>
+""", unsafe_allow_html=True)
 
 top_moves = df[df["Needs_Relocation"]].sort_values(by="Movements", ascending=False).head(10)
 
-st.caption(f"Showing {len(top_moves)} high-impact relocation opportunities based on current filters.")
+st.dataframe(
+    top_moves[["SKU_ID", "ABC_Class", "Zone", "Current_Location", "Movements", "Stock_Qty", "Optimal_Location"]],
+    use_container_width=True,
+    hide_index=True
+)
 
-st.dataframe(top_moves[
-    ["SKU_ID","ABC_Class","Zone","Current_Location","Movements","Stock_Qty","Optimal_Location","Needs_Relocation"]
-], use_container_width=True)
+st.markdown("<div style='margin:16px 0; border-bottom:1px solid #1e2235;'></div>", unsafe_allow_html=True)
 
-st.markdown("---")
 
-# --- Critical SKUs ---
-st.subheader("A-Class High-Movement SKUs (Critical Items)")
+# =========================================================
+# A-CLASS CRITICAL SKUS
+# =========================================================
+st.markdown("""
+<div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#ef4444;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;">
+▸ A-Class High-Movement SKUs — Critical Items
+</div>
+""", unsafe_allow_html=True)
+st.dataframe(
+    priority_df.sort_values(by="Movements", ascending=False),
+    use_container_width=True,
+    hide_index=True
+)
+st.caption("These SKUs represent the highest operational impact and should be prioritized for relocation.")
 
-st.dataframe(priority_df.sort_values(by="Movements", ascending=False), use_container_width=True)
+st.markdown("<div style='margin:16px 0; border-bottom:1px solid #1e2235;'></div>", unsafe_allow_html=True)
 
-st.caption("These SKUs represent the highest operational impact and should be prioritized.")
 
-st.markdown("---")
-
-# --- Before vs After ---
-st.subheader("Before vs. After Optimization Summary")
+# =========================================================
+# BEFORE VS AFTER
+# =========================================================
+st.markdown("""
+<div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#00c9a7;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;">
+▸ Before vs. After Optimization
+</div>
+""", unsafe_allow_html=True)
 
 before_after = pd.DataFrame({
     "Scenario": ["Current State", "After Optimization"],
     "Misaligned SKUs": [misaligned, 0],
     "Picking Time Saved (hrs/week)": [0, estimated_time_saved],
-    "Labor Impact ($/week)": [0, estimated_labor]
+    "Labor Impact ($/week)": [0, int(estimated_labor)],
 })
+st.dataframe(before_after, use_container_width=True, hide_index=True)
 
-st.dataframe(before_after, use_container_width=True)
+st.markdown("<div style='margin:16px 0; border-bottom:1px solid #1e2235;'></div>", unsafe_allow_html=True)
 
-st.markdown("---")
 
-# ---------- Charts ----------
-st.subheader("Warehouse Patterns")
+# =========================================================
+# CHARTS
+# =========================================================
+st.markdown("""
+<div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#00c9a7;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;">
+▸ Operational Patterns & Optimization Opportunities
+</div>
+""", unsafe_allow_html=True)
+
+chart_cfg = alt.theme.enable("dark") if hasattr(alt.theme, "enable") else None
+
+DARK_CHART = {
+    "config": {
+        "background": "#111420",
+        "view": {"fill": "#111420", "stroke": "transparent"},
+        "axis": {
+            "gridColor": "#1e2235",
+            "domainColor": "#1e2235",
+            "tickColor": "#1e2235",
+            "labelColor": "#64748b",
+            "titleColor": "#94a3b8",
+        },
+        "legend": {"labelColor": "#94a3b8", "titleColor": "#94a3b8"},
+        "title": {"color": "#e2e8f0"},
+    }
+}
 
 c1, c2 = st.columns(2)
 
 with c1:
-    st.markdown("### Current Zone Utilization (Imbalance)")
-    zone = df["Zone"].value_counts().reset_index()
-    zone.columns = ["Zone","Count"]
-
-    st.altair_chart(
-        alt.Chart(zone).mark_bar().encode(
-            x="Zone",
-            y="Count",
-            color="Zone"
-        ),
-        use_container_width=True
+    st.markdown("<div style='font-size:13px;font-weight:600;color:#94a3b8;margin-bottom:8px;'>Zone Utilization (Current)</div>", unsafe_allow_html=True)
+    zone_counts = df["Zone"].value_counts().reset_index()
+    zone_counts.columns = ["Zone", "Count"]
+    zone_color = alt.Color("Zone:N", scale=alt.Scale(
+        domain=["Prime", "Secondary", "Reserve"],
+        range=["#00c9a7", "#3b82f6", "#f59e0b"]
+    ))
+    chart1 = (
+        alt.Chart(zone_counts)
+        .mark_bar(cornerRadiusTopLeft=4, cornerRadiusTopRight=4)
+        .encode(x=alt.X("Zone:N", axis=alt.Axis(labelAngle=0)), y="Count:Q", color=zone_color)
+        .properties(height=220)
+        .configure(**DARK_CHART["config"])
     )
+    st.altair_chart(chart1, use_container_width=True)
 
 with c2:
-    st.markdown("### Inventory Mix by ABC Class (Optimization Opportunity)")
-    abc = df["ABC_Class"].value_counts().reset_index()
-    abc.columns = ["Class","Count"]
-
-    st.altair_chart(
-        alt.Chart(abc).mark_bar().encode(
-            x="Class",
-            y="Count",
-            color="Class"
-        ),
-        use_container_width=True
+    st.markdown("<div style='font-size:13px;font-weight:600;color:#94a3b8;margin-bottom:8px;'>ABC Class Mix (Optimization Opportunity)</div>", unsafe_allow_html=True)
+    abc_counts = df["ABC_Class"].value_counts().reset_index()
+    abc_counts.columns = ["Class", "Count"]
+    abc_color = alt.Color("Class:N", scale=alt.Scale(
+        domain=["A", "B", "C"],
+        range=["#ef4444", "#f59e0b", "#22c55e"]
+    ))
+    chart2 = (
+        alt.Chart(abc_counts)
+        .mark_bar(cornerRadiusTopLeft=4, cornerRadiusTopRight=4)
+        .encode(x=alt.X("Class:N", axis=alt.Axis(labelAngle=0)), y="Count:Q", color=abc_color)
+        .properties(height=220)
+        .configure(**DARK_CHART["config"])
     )
+    st.altair_chart(chart2, use_container_width=True)
 
-# --- Key takeaway ---
+
+# =========================================================
+# FOOTER
+# =========================================================
+st.markdown("<div style='margin:24px 0 8px; border-bottom:1px solid #1e2235;'></div>", unsafe_allow_html=True)
 st.markdown("""
-<div class="insight-box">
-<b>Key takeaway:</b> The strongest optimization opportunities come from high-movement
-A-class SKUs outside Prime zones and lower-priority SKUs occupying Prime space.
+<div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#334155;text-align:center;padding:8px 0 16px;">
+    Portfolio Project &nbsp;|&nbsp; Warehouse Slotting Optimization &nbsp;|&nbsp; Python · SQL · Streamlit
+    &nbsp;&nbsp;·&nbsp;&nbsp;
+    <span style="color:#1e3a5f;">⚠ Simulated data — no proprietary information shared</span>
 </div>
 """, unsafe_allow_html=True)
-
-st.markdown("---")
-
-st.caption("Portfolio Project | Warehouse Slotting Optimization | Python, SQL, Streamlit")
-st.markdown('<p class="small-note">This public version uses simulated data.</p>', unsafe_allow_html=True)
