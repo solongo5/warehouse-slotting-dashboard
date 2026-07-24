@@ -105,20 +105,20 @@ st.markdown("""
             color: #00c9a7;
             letter-spacing: 0.08em;
             text-transform: uppercase;
-        ">KEURIG DR PEPPER</span>
+        ">DISTRIBUTION CENTER</span>
         <span style="color: #334155; margin: 0 10px;">|</span>
         <span style="
             font-family: 'IBM Plex Mono', monospace;
             font-size: 13px;
             color: #94a3b8;
             letter-spacing: 0.05em;
-        ">SUMNER DC — WAREHOUSE RE-SLOTTING DASHBOARD</span>
+        ">DC - WAREHOUSE RE-SLOTTING DASHBOARD</span>
         <span style="color: #334155; margin: 0 10px;">|</span>
         <span style="
             font-family: 'IBM Plex Mono', monospace;
             font-size: 12px;
             color: #475569;
-        ">MSBA TEAM 3 · PUBLIC DEMO</span>
+        ">PUBLIC DEMO</span>
     </div>
     <div style="
         font-family: 'IBM Plex Mono', monospace;
