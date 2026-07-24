@@ -5,7 +5,7 @@ import streamlit.components.v1 as components
 import altair as alt
 
 st.set_page_config(
-    page_title="KDP Warehouse Slotting Dashboard",
+    page_title="Warehouse Slotting Dashboard",
     layout="wide",
     initial_sidebar_state="expanded"
 )
