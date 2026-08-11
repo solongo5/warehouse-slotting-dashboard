@@ -221,7 +221,7 @@ st.markdown(
     "<div style='font-family:IBM Plex Mono,monospace;font-size:11px;color:#00c9a7;"
     "letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px;'>&#9906; SKU Bin Recommendation</div>"
     "<div style='font-size:13px;color:#475569;margin-bottom:12px;'>"
-    "Type a SKU ID below. The engine will look up its ABC class and speed, determine the optimal zone, "
+    "Type a SKU ID below in SKU_X format. The engine will look up its ABC class and speed, determine the optimal zone, "
     "and recommend the best available bin — showing whether it is currently misplaced.</div>",
     unsafe_allow_html=True
 )
